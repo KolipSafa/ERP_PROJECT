@@ -4,6 +4,34 @@ Bu belge, ERP projesi üzerinde yapılan günlük çalışmaları özetlemektedi
 
 ---
 
+## 25 Temmuz 2025 Cuma
+
+Bugünün ana odağı, projenin ikinci ana modülü olan **Müşteri Cari**'nin frontend (kullanıcı arayüzü) katmanını, mevcut Ürün modülünün yüksek standartlarını referans alarak uçtan uca geliştirmek ve bu süreçte karşılaşılan hataları ayıklamaktı.
+
+### Müşteri Modülü Frontend Geliştirmesi
+- **Planlı Geliştirme:** `customer_frontend_plan.md` belgesinde tanımlanan plana sadık kalınarak, Müşteri modülü için gerekli tüm Vue.js component'leri ve servisleri oluşturuldu.
+- **API Servisi (`CustomerService.ts`):** Backend ile tüm müşteri API iletişimini yönetecek olan servis, `ProductService.ts`'in yapısı referans alınarak, tip güvenliği (TypeScript DTO'ları ve Payload'ları) ve merkezi yönetim ilkeleriyle oluşturuldu.
+- **Müşteri Listeleme Ekranı (`CustomersView.vue`):**
+  - `v-data-table` kullanılarak, müşterileri listeleyen, arama ve sıralama yapabilen dinamik bir tablo oluşturuldu.
+  - Kullanıcı deneyimini iyileştirmek için, adres ve vergi numarası gibi detay bilgiler, `Product` modülündeki gibi genişletilebilir bir satır (`v-slot:expanded-row`) içinde gösterildi.
+- **Müşteri Form Ekranı (`CustomerFormView.vue`):**
+  - Hem "Yeni Müşteri Ekleme" hem de "Müşteri Düzenleme" modlarında çalışabilen, yeniden kullanılabilir tek bir form component'i geliştirildi.
+  - URL'deki `:id` parametresine göre modlar arasında geçiş yapma ve ilgili verileri yükleme mantığı implemente edildi.
+- **Yönlendirme (`router/index.ts`):** Müşteri modülünün tüm yeni sayfaları (`/customers`, `/customers/new`, `/customers/edit/:id`), uygulamanın yönlendirme sistemine eklendi.
+
+### Hata Ayıklama ve Sağlamlaştırma
+- **Yönlendirme (Routing) Hataları:** Geliştirme sırasında karşılaşılan "No match found for location" ve "duplicate declaration" gibi kritik yönlendirme hataları, `router/index.ts` dosyasındaki eksik ve yinelenen `import` ifadeleri düzeltilerek giderildi.
+- **Filtreleme ve Sıralama Mantığı:**
+  - İlk başta çalışmayan filtreleme ve sıralama özelliğinin kök nedeni, frontend ve backend arasındaki API parametre isimlerinin (`search` vs `searchTerm`) uyuşmaması olarak tespit edildi ve bu uyumsuzluk giderildi.
+  - Sıralamanın (örn: Z-A) düzgün çalışmamasına neden olan reaktivite (state management) hatası, `v-select` component'inin state'i daha basit ve güvenilir bir string (`'name_desc'`) üzerinden yönetmesi sağlanarak çözüldü.
+- **Veri Bütünlüğü ve Test Verisi:**
+  - Düzenleme formunda hatalı verilerin görünmesi sorununun, koddan değil, veritabanındaki bozuk bir kayıttan kaynaklandığı tespit edildi.
+  - Geliştirme ortamını zenginleştirmek için, Entity Framework Core'un "Data Seeding" mekanizması kullanılarak veritabanına 20 adet örnek müşteri verisi eklendi. Bu süreçte karşılaşılan `ConnectionString` ve `DateTime.UtcNow` gibi `dotnet ef` komut hataları, `ApplicationDbContextFactory`'nin düzeltilmesi ve sabit tarih değerleri kullanılmasıyla aşıldı.
+
+Bugünkü çalışmalar sonucunda, Müşteri modülü hem backend hem de frontend olarak tamamlanmış, test edilmiş ve proje planına uygun şekilde teslim edilmiştir.
+
+---
+
 ## 24 Temmuz 2025 Perşembe
 
 Bugün, projenin ikinci ana modülü olan **Müşteri Cari**'nin backend altyapısı, projenin mevcut yüksek standartları referans alınarak uçtan uca geliştirildi. Bu süreç, aynı zamanda `Product` modülünde tespit edilen mimari ve güvenlik eksikliklerinin giderildiği kapsamlı bir **refactoring ve hata ayıklama** çalışmasını da içerdi.
@@ -104,3 +132,43 @@ Bugün tamamen backend API'sinin `Product` modülü üzerindeki işlevselliği v
 - **API Tutarlılığı:** `Create`, `Update`, `GetAll` ve `GetById` dahil olmak üzere tüm `Product` endpoint'lerinin, frontend'e her zaman tutarlı ve güvenli olan `ProductDto` nesnesini dönmesi sağlandı.
 - **Gelişmiş Filtreleme ve Sıralama:** `GET /api/products` endpoint'i, `search`, `minPrice`, `maxPrice`, `sortBy`, `sortOrder` gibi birden fazla parametreyi aynı anda alıp, buna uygun dinamik ve optimize SQL sorguları üretebilecek şekilde `IProductRepository` katmanında `IQueryable` kullanılarak geliştirildi.
 - **Proje Planı:** Yapılan tüm bu backend geliştirmeleri ve yeni hedefler, `docs/erp_proje_plan.md` dosyasına işlenerek proje dokümantasyonu güncel tutuldu.
+
+**Kod Örneği: "Akıllı" Kısmi Güncelleme Mantığı (`UpdateProductCommandHandler.cs`)**
+```csharp
+// Sadece frontend'den gelen (null olmayan) veriler güncellenir.
+// Bu, "Akıllı Güncelleme" mantığıdır ve veri kaybını önler.
+public async Task Handle(UpdateProductCommand request, CancellationToken cancellationToken)
+{
+    var product = await _unitOfWork.ProductRepository.GetByIdAsync(request.Id);
+    // ...
+    product.Name = request.Name ?? product.Name;
+    product.Description = request.Description ?? product.Description;
+    product.Price = request.Price ?? product.Price;
+    // ...
+    _unitOfWork.ProductRepository.Update(product);
+    await _unitOfWork.SaveChangesAsync(cancellationToken);
+}
+```
+
+**Kod Örneği: IQueryable ile Dinamik Filtreleme (`ProductRepository.cs`)**
+```csharp
+public async Task<IEnumerable<Product>> GetAllAsync(/* filtre parametreleri */)
+{
+    // Önce bir sorgu taslağı oluşturulur.
+    var query = _context.Products.AsQueryable();
+
+    // Gelen her filtre parametresine göre, bu taslak üzerine yeni koşullar eklenir.
+    if (!string.IsNullOrWhiteSpace(searchTerm))
+    {
+        query = query.Where(p => p.Name.Contains(searchTerm));
+    }
+    if (minPrice.HasValue)
+    {
+        query = query.Where(p => p.Price >= minPrice.Value);
+    }
+    // ...
+
+    // Sorgu, sadece en sonda veritabanına gönderilir.
+    return await query.ToListAsync();
+}
+```

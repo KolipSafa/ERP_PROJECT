@@ -57,9 +57,9 @@ Bu aşamada, ürün yönetimiyle ilgili tüm temel backend ve frontend işlevler
 
 ---
 
-#### **Aşama 2: Müşteri Cari Modülü** `Backend ✅ / Frontend ❌`
+#### **Aşama 2: Müşteri Cari Modülü** `✅ Tamamlandı`
 
-Bu aşamada, müşteri bilgilerinin yönetileceği modül geliştirilecektir.
+Bu aşamada, müşteri bilgilerinin yönetileceği modül geliştirilmiştir.
 
 **2.1. Backend Geliştirme (.NET API)** `✅ Tamamlandı`
 *   **Entity:** `Customer` adında yeni bir veritabanı varlığı (`Guid` Id ile) oluşturuldu.
@@ -68,15 +68,17 @@ Bu aşamada, müşteri bilgilerinin yönetileceği modül geliştirilecektir.
 *   **Controller:** `CustomersController` ile temel CRUD, arşivleme ve `PATCH` endpoint'leri eklendi.
 *   **Validasyon:** Müşteri bilgileri için (`Email` benzersizlik kontrolü dahil) `FluentValidation` kuralları, `CustomerValidatorBase` kullanılarak yazıldı.
 
-**2.2. Frontend Geliştirme (Vue.js)** `⏳ Sıradaki Görev`
-*   **API Servisi:** `CustomerService.ts` oluşturulacak.
+**2.2. Frontend Geliştirme (Vue.js)** `✅ Tamamlandı`
+*   **API Servisi:** `CustomerService.ts` oluşturuldu.
 *   **Listeleme Sayfası (`CustomersView.vue`):**
-    *   Ürünler sayfasındakine benzer, `v-data-table` ile müşteri listesi oluşturulacak.
-    *   Müşteri adı, firma adı veya e-postaya göre arama yapılacak.
-    *   Aktif/pasif müşterileri filtreleme seçeneği sunulacak.
+    *   Ürünler sayfasındakine benzer, `v-data-table` ile müşteri listesi oluşturuldu.
+    *   Müşteri adı, firma adı veya e-postaya göre arama yapma ve sıralama işlevleri eklendi.
+    *   Aktif/pasif müşterileri filtreleme seçeneği sunuldu.
+    *   Detaylı bilgileri (adres, vergi no) göstermek için genişletilebilir satır özelliği eklendi.
 *   **Form Sayfası (`CustomerFormView.vue`):**
-    *   Yeni müşteri ekleme ve mevcut müşteriyi düzenleme için yeniden kullanılabilir bir form oluşturulacak.
-*   **İşlevsellik:** Müşteri ekleme, düzenleme, arşivleme ve geri yükleme işlevleri, ürün modülündeki gibi onay pencereleriyle birlikte tamamlanacak.
+    *   Yeni müşteri ekleme ve mevcut müşteriyi düzenleme için yeniden kullanılabilir bir form oluşturuldu.
+*   **İşlevsellik:** Müşteri ekleme, düzenleme, arşivleme ve geri yükleme işlevleri, ürün modülündeki gibi onay pencereleriyle birlikte tamamlandı.
+*   **Hata Ayıklama:** Geliştirme sırasında karşılaşılan yönlendirme ve filtreleme hataları giderildi.
 
 ---
 
