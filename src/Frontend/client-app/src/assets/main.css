@@ -1,0 +1,24 @@
+@import './base.css';
+
+#app {
+  /* Bu varsayılan stiller artık Vuetify tarafından yönetildiği için kaldırılabilir veya düzenlenebilir. Şimdilik dokunmuyoruz. */
+}
+
+/* Modern Scrollbar Stilleri */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
