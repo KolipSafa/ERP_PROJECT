@@ -14,6 +14,7 @@ namespace Infrastructure.Persistence
         private readonly ApplicationDbContext _context;
         private IProductRepository? _productRepository;
         private ICustomerRepository? _customerRepository;
+        private ITeklifRepository? _teklifRepository; // Yeni repository için private alan
 
         public UnitOfWork(ApplicationDbContext context)
         {
@@ -28,6 +29,9 @@ namespace Infrastructure.Persistence
         public IProductRepository ProductRepository => _productRepository ??= new ProductRepository(_context);
 
         public ICustomerRepository CustomerRepository => _customerRepository ??= new CustomerRepository(_context);
+
+        // TeklifRepository için de aynı lazy loading desenini uyguluyoruz.
+        public ITeklifRepository TeklifRepository => _teklifRepository ??= new TeklifRepository(_context);
 
         // CancellationToken'ı DbContext'e iletiyoruz.
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

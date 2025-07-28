@@ -16,10 +16,35 @@ namespace Infrastructure.Persistence
 
         public DbSet<Product> Products { get; set; }
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<Teklif> Teklifler { get; set; }
+        public DbSet<TeklifSatiri> TeklifSatirlari { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Teklif ve TeklifSatiri için Fluent API yapılandırması
+            modelBuilder.Entity<Teklif>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ToplamTutar).HasColumnType("decimal(18, 2)");
+
+                // Bir Teklif'in birden çok TeklifSatiri olabilir.
+                // Bir Teklif silindiğinde, ona bağlı tüm satırlar da silinsin (Cascade delete).
+                entity.HasMany(e => e.TeklifSatirlari)
+                      .WithOne(s => s.Teklif)
+                      .HasForeignKey(s => s.TeklifId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<TeklifSatiri>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Miktar).HasColumnType("decimal(18, 2)");
+                entity.Property(e => e.BirimFiyat).HasColumnType("decimal(18, 2)");
+                entity.Property(e => e.Toplam).HasColumnType("decimal(18, 2)");
+            });
+
 
             // Dummy Product Verisi Ekleme (Data Seeding)
             modelBuilder.Entity<Product>().HasData(

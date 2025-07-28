@@ -9,6 +9,7 @@ namespace Core.Domain.Interfaces
     {
         IProductRepository ProductRepository { get; }
         ICustomerRepository CustomerRepository { get; }
+        ITeklifRepository TeklifRepository { get; } // Yeni repository'mizi ekledik.
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }
