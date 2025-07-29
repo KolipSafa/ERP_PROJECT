@@ -110,3 +110,23 @@ Bu aşamada, müşterilere ürünler içeren tekliflerin oluşturulacağı ve y�
 *   **Hata Ayıklama ve Sağlamlaştırma:**
     *   Backend'in `400 Bad Request` hatası vermesine neden olan tarih doğrulama (`GreaterThan`) sorunu, frontend'de geçerlilik tarihinin gün sonuna ayarlanmasıyla çözüldü.
     *   Geliştirme sırasında karşılaşılan çok sayıda TypeScript tip hatası giderilerek kodun güvenilirliği artırıldı.
+
+---
+
+#### **Aşama 4: Ayarlar Modülü** `⏳ Geliştiriliyor`
+
+Bu aşamada, para birimi ve firmalar gibi sistem genelindeki verilerin yönetileceği altyapı oluşturulmaktadır.
+
+**4.1. Backend Geliştirme (.NET API)** `⏳ Geliştiriliyor`
+*   **Mimari ve Entity'ler:** `Currency` ve `Company` entity'leri oluşturuldu. `Customer`, `Product`, `Teklif` gibi mevcut entity'ler, bu yeni yapıları kullanacak şekilde (`CurrencyId`, `CompanyId`) güncellendi. `✅ Tamamlandı`
+*   **Veritabanı Seeding:** Uygulama ilk kurulduğunda temel para birimlerinin (TRY, USD, EUR) veritabanına otomatik olarak eklenmesi (seeding) sağlandı. `✅ Tamamlandı`
+*   **Repository ve Unit of Work:** Yeni entity'ler için `ICurrencyRepository`, `ICompanyRepository` ve implementasyonları oluşturularak `IUnitOfWork`'e entegre edildi. `✅ Tamamlandı`
+*   **CQRS (Para Birimi):**
+    *   `GetCurrenciesQuery` ve işleyicisi oluşturularak tüm para birimlerinin listelenmesi sağlandı. `✅ Tamamlandı`
+    *   `CreateCurrencyCommand`, işleyicisi ve `FluentValidation` tabanlı doğrulayıcısı oluşturularak sisteme yeni para birimi ekleme işlevselliği kazandırıldı. `✅ Tamamlandı`
+*   **API Controller:** `SettingsController` oluşturuldu. Para birimleri için `GET /api/settings/currencies` ve `POST /api/settings/currencies` endpoint'leri implemente edildi. `✅ Tamamlandı`
+*   **Proje Geneli Sağlamlaştırma:** Geliştirme sırasında ortaya çıkan, `IUnitOfWork`'ün yanlış kullanımı ve `null` referans uyarıları gibi çok sayıda derleme hatası ve uyarı proje genelinde temizlendi. `✅ Tamamlandı`
+
+**4.2. Frontend Geliştirme (Vue.js)** `▶️ Henüz Başlanmadı`
+*   Ayarlar modülü için kullanıcı arayüzü geliştirilecek.
+*   Mevcut modüller (Müşteri, Ürün, Teklif), yeni Ayarlar API'sini (firma ve para birimi seçimi için) kullanacak şekilde güncellenecek.

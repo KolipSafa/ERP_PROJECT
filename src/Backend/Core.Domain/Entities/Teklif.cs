@@ -19,7 +19,7 @@ namespace Core.Domain.Entities
         public DateTime GecerlilikTarihi { get; set; }
         public decimal ToplamTutar { get; set; }
         public int CurrencyId { get; set; }
-        public Currency Currency { get; set; } = null!;
+        public Currency? Currency { get; set; }
         public QuoteStatus Durum { get; set; }
         public bool IsActive { get; set; } = true;
         

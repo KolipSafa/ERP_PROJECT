@@ -4,6 +4,7 @@ using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250729134219_InitialSchema")]
+    partial class InitialSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,32 +75,6 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Currencies");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Code = "TRY",
-                            IsActive = true,
-                            Name = "Türk Lirası",
-                            Symbol = "₺"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Code = "USD",
-                            IsActive = true,
-                            Name = "Amerikan Doları",
-                            Symbol = "$"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Code = "EUR",
-                            IsActive = true,
-                            Name = "Euro",
-                            Symbol = "€"
-                        });
                 });
 
             modelBuilder.Entity("Core.Domain.Entities.Customer", b =>

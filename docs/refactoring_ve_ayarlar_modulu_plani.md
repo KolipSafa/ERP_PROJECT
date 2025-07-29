@@ -82,16 +82,20 @@ Bu belge, projeye yeni bir "Ayarlar" modülü eklemek, mevcut modülleri bu yeni
 **Tarih:** 29 Temmuz 2025
 
 **Tamamlanan Adımlar:**
-*   `✅` **Refactoring:** Projedeki tüm `Delete` metotları, `soft delete` (`IsActive=false`) mantığını içerecek şekilde standartlaştırıldı. Bu mantık Repository katmanına taşındı ve `Application` katmanındaki Command Handler'lar temizlendi.
-*   `✅` **Domain Katmanı:** `Company` ve `Currency` entity'leri oluşturuldu. `Customer`, `Product` ve `Teklif` entity'leri yeni ilişkilere (`CompanyId`, `CurrencyId`) göre güncellendi.
-*   `✅` **Altyapı Katmanı:** `ICompanyRepository`, `ICurrencyRepository` ve implementasyonları oluşturuldu. `IUnitOfWork` ve `UnitOfWork.cs` yeni repository'leri içerecek şekilde güncellendi. `ApplicationDbContext`'e yeni `DbSet`'ler ve ilişkiler eklendi.
-*   `✅` **Derleme Hataları:** Entity'lerde yapılan değişiklikler sonrası `Application` ve `Infrastructure` katmanlarında ortaya çıkan tüm derleme hataları giderildi.
-*   `✅` **Migration Sorun Giderme:** Migration oluşturma sırasında karşılaşılan `UNIQUE INDEX` sorunu, `ApplicationDbContext`'te `Email` alanına `HasMaxLength(450)` kuralı eklenerek ve yapılandırma sırası düzeltilerek çözüldü.
+*   `✅` **Refactoring ve Altyapı:** Proje genelindeki `Delete` metotları standartlaştırıldı, `Domain` ve `Infrastructure` katmanları yeni `Company` ve `Currency` entity'lerini ve repository'lerini içerecek şekilde tamamen güncellendi.
+*   `✅` **Proje Geneli Sağlamlaştırma:** Geliştirme sırasında `Company` modülündeki `IUnitOfWork` yanlış kullanımlarından kaynaklanan tüm derleme hataları giderildi. `TeklifMappings` ve `CustomerRepository` dosyalarındaki potansiyel `null` referans uyarıları temizlendi.
+*   `✅` **Hibrit Para Birimi Yaklaşımı:**
+    *   **Veritabanı Seeding:** Temel para birimlerini (TRY, USD, EUR) veritabanına otomatik olarak eklemek için `ApplicationDbContext`'e seeding verisi eklendi.
+    *   `SeedCurrencies` adında yeni bir migration oluşturuldu ve veritabanına başarıyla uygulandı.
+*   `✅` **Ayarlar Modülü API (`Currency`):**
+    *   `SettingsController` oluşturuldu.
+    *   `GetCurrenciesQuery` implemente edilerek para birimlerinin listelenmesi sağlandı.
+    *   `CreateCurrencyCommand` ve `Validator`'ı implemente edilerek yeni para birimi ekleme özelliği tamamlandı.
+    *   Controller, bu yeni özellikleri sunacak şekilde güncellendi.
+*   `✅` **Mimari Tutarlılık:** `Application` katmanının `Infrastructure` katmanına yanlışlıkla referans vermesine neden olan bir `using` ifadesi `CreateCurrencyCommandValidator`'dan kaldırılarak mimari bütünlük korundu.
 
 **KALINAN YER VE BİR SONRAKİ ADIM:**
 
-**Mevcut Durum:** En son migration (`AddSettingsModuleAndRefactor`) kaldırıldı ve `DbContext`'teki `Email` index sorunu düzeltildi. Backend projesi şu anda temiz bir şekilde derleniyor.
+**Mevcut Durum:** Backend projesi hatasız ve uyarısız bir şekilde derleniyor. Ayarlar modülünün para birimi yönetimi için listeleme (`GET`) ve oluşturma (`POST`) işlevleri tamamlandı.
 
-**➡️ Bir Sonraki Adım:** **Yeni ve düzeltilmiş migration'ı oluşturmak.** Bunun için aşağıdaki komut çalıştırılacak:
-`dotnet ef migrations add AddSettingsModuleAndRefactor --startup-project ../API.Web`
-Bu komut çalıştırıldıktan sonra, oluşturulan migration dosyası, planın **1.2** adımında belirtilen **veri taşıma SQL betikleri** ile manuel olarak düzenlenecek.
+**➡️ Bir Sonraki Adım:** **Ayarlar modülüne devam etmek.** Para birimleri için `Update` ve `Delete` işlemlerini implemente etmek veya Firmaları (`Company`) yönetmek için CRUD operasyonlarını geliştirmeye başlamak mantıklı bir sonraki adım olacaktır.

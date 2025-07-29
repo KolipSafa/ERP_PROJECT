@@ -10,7 +10,7 @@ namespace Core.Domain.Entities
         public string? Description { get; set; }
         public decimal Price { get; set; }
         public int CurrencyId { get; set; }
-        public Currency Currency { get; set; } = null!;
+        public Currency? Currency { get; set; }
         public int StockQuantity { get; set; }
         public string? SKU { get; set; }
         public bool IsActive { get; set; } = true;

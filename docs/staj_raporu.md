@@ -4,6 +4,28 @@ Bu belge, ERP projesi üzerinde yapılan günlük çalışmaları özetlemektedi
 
 ---
 
+## 29 Temmuz 2025 Salı
+
+Bugünün ana odağı, projeye yeni bir **Ayarlar Modülü** eklemek, bu modülün ilk işlevselliği olan para birimi yönetimini (Currency Management) hayata geçirmek ve bu süreçte proje genelinde tespit edilen çeşitli hataları ve tutarsızlıkları gidererek kod kalitesini artırmaktı.
+
+### Ayarlar Modülü Geliştirmesi ve Hibrit Yaklaşım
+- **Hibrit Para Birimi Yönetimi:** Kullanıcıya esneklik sunmak ile veri bütünlüğünü korumak arasında bir denge kuran **hibrit bir yaklaşım** benimsendi.
+- **Veritabanı Seeding:** Bu yaklaşıma uygun olarak, Entity Framework Core'un "Data Seeding" özelliği kullanılarak sisteme en sık kullanılan para birimleri (TRY, USD, EUR) başlangıç verisi olarak eklendi. Bu değişiklikleri uygulamak için `SeedCurrencies` adında yeni bir veritabanı migration'ı oluşturuldu ve başarıyla uygulandı.
+- **Para Birimi CRUD İşlemleri (Backend):**
+  - `SettingsController` adında yeni bir API kontrolcüsü oluşturuldu.
+  - **Listeleme (`GET`):** Tüm para birimlerini getiren `GetCurrenciesQuery` ve işleyicisi (handler) implemente edildi.
+  - **Oluşturma (`POST`):** Sisteme yeni bir para birimi eklemeyi sağlayan `CreateCurrencyCommand`, bu komutu işleyen `CreateCurrencyCommandHandler` ve gelen veriyi doğrulayan `CreateCurrencyCommandValidator` (FluentValidation ile) uçtan uca geliştirildi.
+  - Controller, bu yeni CQRS bileşenlerini `MediatR` aracılığıyla kullanacak şekilde güncellendi.
+
+### Proje Geneli Sağlamlaştırma ve Hata Ayıklama
+- **Mimari Tutarlılık ve Hata Giderme:**
+  - Geliştirme sırasında, `Company` modülündeki komut işleyicilerinin `IUnitOfWork` arayüzünü yanlış kullandığı (`_unitOfWork.Companies` yerine `_unitOfWork.CompanyRepository` kullanılmalıydı) tespit edildi. Bu durumdan kaynaklanan **çok sayıda derleme hatası** proje genelinde düzeltildi.
+  - `TeklifMappings` ve `CustomerRepository` gibi dosyalarda, `null` referanslara yol açabilecek ve derleyici tarafından uyarı olarak işaretlenen kod bölümleri, gerekli kontroller eklenerek güvenli hale getirildi.
+  - `CreateCurrencyCommandValidator` içinde, `Application` katmanının `Infrastructure` katmanına referans vermesine neden olan (mimariyi bozan) hatalı bir `using` ifadesi kaldırılarak katmanların ayrılığı prensibi korundu.
+
+Bugünkü çalışmalar sonucunda, Ayarlar modülünün ilk temel taşı olan para birimi yönetimi altyapısı tamamlanmış, proje genelindeki gizli kalmış hatalar temizlenmiş ve backend projesi **hatasız ve uyarısız** bir şekilde derlenir hale getirilmiştir.
+---
+
 ## 28 Temmuz 2025 Pazartesi
 
 Bugün, projenin üçüncü ve en karmaşık modülü olan **Teklif Yönetimi**'nin backend altyapısı, projenin mevcut Clean Architecture ve CQRS prensiplerine sadık kalınarak uçtan uca geliştirildi. Bu geliştirme, `Product` ve `Customer` modüllerinden gelen verileri bir araya getiren, ilişkisel bir yapıya sahiptir.

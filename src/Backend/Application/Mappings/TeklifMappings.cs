@@ -10,13 +10,13 @@ namespace Application.Mappings
         {
             // TeklifSatiri'ndan TeklifSatiriDto'ya haritalama
             CreateMap<TeklifSatiri, TeklifSatiriDto>()
-                .ForMember(dest => dest.UrunAdi, opt => opt.MapFrom(src => src.Urun.Name));
+                .ForMember(dest => dest.UrunAdi, opt => opt.MapFrom(src => src.Urun != null ? src.Urun.Name : string.Empty));
 
             // Teklif'ten TeklifDto'ya haritalama
             CreateMap<Teklif, TeklifDto>()
                 .ForMember(
                     dest => dest.MusteriAdi, 
-                    opt => opt.MapFrom(src => $"{src.Musteri.FirstName} {src.Musteri.LastName}")
+                    opt => opt.MapFrom(src => src.Musteri != null ? $"{src.Musteri.FirstName} {src.Musteri.LastName}" : string.Empty)
                 )
                 .ForMember(
                     dest => dest.Durum, 

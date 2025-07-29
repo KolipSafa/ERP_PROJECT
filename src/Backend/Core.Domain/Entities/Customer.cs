@@ -29,7 +29,7 @@ namespace Core.Domain.Entities
         public Guid CompanyId { get; set; }
         // Entity Framework'ün CompanyId üzerinden ilgili Company nesnesini otomatik olarak
         // yüklemesini sağlayan "navigation property".
-        public Company Company { get; set; } = null!;
+        public Company? Company { get; set; }
 
         public string? PhoneNumber { get; set; }
         public string? Email { get; set; }

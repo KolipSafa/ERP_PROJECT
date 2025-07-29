@@ -13,7 +13,7 @@ namespace Core.Domain.Entities
 
         public int UrunId { get; set; }
         [ForeignKey("UrunId")]
-        public Product Urun { get; set; } = null!;
+        public Product? Urun { get; set; }
 
         public string Aciklama { get; set; } = string.Empty;
         public decimal Miktar { get; set; }

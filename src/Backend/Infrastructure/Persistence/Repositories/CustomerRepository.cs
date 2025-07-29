@@ -37,8 +37,8 @@ namespace Infrastructure.Persistence.Repositories
             {
                 var term = searchTerm.ToLower();
                 query = query.Where(c =>
-                    c.FirstName.ToLower().Contains(term) ||
-                    c.LastName.ToLower().Contains(term) ||
+                    (c.FirstName != null && c.FirstName.ToLower().Contains(term)) ||
+                    (c.LastName != null && c.LastName.ToLower().Contains(term)) ||
                     (c.Company != null && c.Company.Name.ToLower().Contains(term)) ||
                     (c.Email != null && c.Email.ToLower().Contains(term))
                 );
@@ -50,8 +50,8 @@ namespace Infrastructure.Persistence.Repositories
                     ? query.OrderByDescending(c => c.FirstName).ThenByDescending(c => c.LastName)
                     : query.OrderBy(c => c.FirstName).ThenBy(c => c.LastName),
                 "company" => isDescending
-                    ? query.OrderByDescending(c => c.Company.Name)
-                    : query.OrderBy(c => c.Company.Name),
+                    ? query.OrderByDescending(c => c.Company != null ? c.Company.Name : string.Empty)
+                    : query.OrderBy(c => c.Company != null ? c.Company.Name : string.Empty),
                 "date" => isDescending
                     ? query.OrderByDescending(c => c.CreatedDate)
                     : query.OrderBy(c => c.CreatedDate),
