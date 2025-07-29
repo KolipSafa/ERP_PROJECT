@@ -96,6 +96,8 @@ namespace Infrastructure.Persistence.Repositories
 
         public void Delete(Teklif teklif)
         {
+            // Bu bir soft delete işlemidir.
+            teklif.IsActive = false;
             _context.Teklifler.Update(teklif);
         }
     }

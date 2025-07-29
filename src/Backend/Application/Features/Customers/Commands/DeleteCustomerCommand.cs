@@ -27,10 +27,7 @@ namespace Application.Features.Customers.Commands
                 throw new NotFoundException(nameof(Customer), request.Id);
             }
 
-            customer.IsActive = false;
-            customer.UpdatedDate = DateTime.UtcNow;
-
-            _unitOfWork.CustomerRepository.Update(customer);
+            _unitOfWork.CustomerRepository.Delete(customer);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Unit.Value;

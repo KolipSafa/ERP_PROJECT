@@ -52,15 +52,13 @@ namespace API.Web.Controllers
         {
             // Komutun ID'sini her zaman URL'den gelen ID ile ayarla.
             // Bu, PATCH isteğinde body'de ID olmasa bile komutun doğru ID'ye sahip olmasını sağlar.
-            if (command is { Id: var commandId } && commandId != Guid.Empty && commandId != id)
+            if (command.Id != Guid.Empty && command.Id != id)
             {
-                return BadRequest("URL'deki ID ile gövdedeki ID uyuşmuyor.");
+                return BadRequest("ID mismatch");
             }
-
-            // UpdateCustomerCommand bir record olduğu için, 'with' ifadesiyle kopyasını oluşturuyoruz.
-            var commandWithCorrectId = command with { Id = id };
-
-            await _mediator.Send(commandWithCorrectId);
+            command.Id = id;
+            
+            await _mediator.Send(command);
             return NoContent();
         }
 

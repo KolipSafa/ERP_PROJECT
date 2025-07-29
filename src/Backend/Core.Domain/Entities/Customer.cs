@@ -24,9 +24,13 @@ namespace Core.Domain.Entities
         // '?' işareti, C# derleyicisine "Bu alanın null olması normal ve beklenen bir durumdur." der.
         // Bu sayede, bu özelliği kullanmaya çalıştığımız her yerde derleyici bizi "Dikkat et, bu null olabilir!"
         // diye uyarır ve gerekli null kontrollerini yapmaya teşvik eder. Bu da kodun güvenliğini artırır.
-        public string? CompanyName { get; set; }
-        public string? TaxNumber { get; set; }
-        public string? Address { get; set; }
+        
+        // Müşterinin bağlı olduğu şirketin ID'si. Bu alan zorunludur.
+        public Guid CompanyId { get; set; }
+        // Entity Framework'ün CompanyId üzerinden ilgili Company nesnesini otomatik olarak
+        // yüklemesini sağlayan "navigation property".
+        public Company Company { get; set; } = null!;
+
         public string? PhoneNumber { get; set; }
         public string? Email { get; set; }
 

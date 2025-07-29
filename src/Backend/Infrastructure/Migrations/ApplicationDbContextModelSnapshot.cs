@@ -65,7 +65,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
 
                     b.HasData(
                         new
@@ -339,7 +339,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
 
                     b.HasData(
                         new
@@ -526,7 +526,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("MusteriId");
 
-                    b.ToTable("Teklifler");
+                    b.ToTable("Teklifler", (string)null);
                 });
 
             modelBuilder.Entity("Core.Domain.Entities.TeklifSatiri", b =>
@@ -560,7 +560,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("UrunId");
 
-                    b.ToTable("TeklifSatirlari");
+                    b.ToTable("TeklifSatirlari", (string)null);
                 });
 
             modelBuilder.Entity("Core.Domain.Entities.Teklif", b =>

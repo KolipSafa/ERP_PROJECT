@@ -9,7 +9,8 @@ namespace Application.Mappings
     {
         public CustomerMappings()
         {
-            CreateMap<Customer, CustomerDto>();
+            CreateMap<Customer, CustomerDto>()
+                .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company != null ? src.Company.Name : null));
         }
     }
 }

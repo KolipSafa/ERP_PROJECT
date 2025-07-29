@@ -26,7 +26,7 @@ namespace Infrastructure.Persistence.Repositories
             string? sortBy = null,
             bool isDescending = false)
         {
-            var query = _context.Customers.AsQueryable();
+            var query = _context.Customers.Include(c => c.Company).AsQueryable();
 
             if (!includeInactive)
             {
@@ -39,9 +39,8 @@ namespace Infrastructure.Persistence.Repositories
                 query = query.Where(c =>
                     c.FirstName.ToLower().Contains(term) ||
                     c.LastName.ToLower().Contains(term) ||
-                    (c.CompanyName != null && c.CompanyName.ToLower().Contains(term)) ||
-                    (c.Email != null && c.Email.ToLower().Contains(term)) ||
-                    (c.TaxNumber != null && c.TaxNumber.ToLower().Contains(term))
+                    (c.Company != null && c.Company.Name.ToLower().Contains(term)) ||
+                    (c.Email != null && c.Email.ToLower().Contains(term))
                 );
             }
 
@@ -51,8 +50,8 @@ namespace Infrastructure.Persistence.Repositories
                     ? query.OrderByDescending(c => c.FirstName).ThenByDescending(c => c.LastName)
                     : query.OrderBy(c => c.FirstName).ThenBy(c => c.LastName),
                 "company" => isDescending
-                    ? query.OrderByDescending(c => c.CompanyName)
-                    : query.OrderBy(c => c.CompanyName),
+                    ? query.OrderByDescending(c => c.Company.Name)
+                    : query.OrderBy(c => c.Company.Name),
                 "date" => isDescending
                     ? query.OrderByDescending(c => c.CreatedDate)
                     : query.OrderBy(c => c.CreatedDate),
@@ -76,11 +75,15 @@ namespace Infrastructure.Persistence.Repositories
 
         public void Update(Customer customer)
         {
+            customer.UpdatedDate = DateTime.UtcNow;
             _context.Customers.Update(customer);
         }
 
         public void Delete(Customer customer)
         {
+            // Bu bir soft delete işlemidir.
+            customer.IsActive = false;
+            customer.UpdatedDate = DateTime.UtcNow;
             _context.Customers.Update(customer);
         }
     }

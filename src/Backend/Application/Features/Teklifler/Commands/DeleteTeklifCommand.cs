@@ -39,8 +39,8 @@ namespace Application.Features.Teklifler.Commands
                 throw new NotFoundException(nameof(Teklif), request.Id);
             }
 
-            teklifToDelete.IsActive = false;
-
+            _unitOfWork.TeklifRepository.Delete(teklifToDelete);
+            
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Unit.Value;

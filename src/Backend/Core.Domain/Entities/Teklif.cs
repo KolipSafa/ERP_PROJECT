@@ -18,6 +18,8 @@ namespace Core.Domain.Entities
         public DateTime TeklifTarihi { get; set; }
         public DateTime GecerlilikTarihi { get; set; }
         public decimal ToplamTutar { get; set; }
+        public int CurrencyId { get; set; }
+        public Currency Currency { get; set; } = null!;
         public QuoteStatus Durum { get; set; }
         public bool IsActive { get; set; } = true;
         

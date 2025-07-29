@@ -11,16 +11,14 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Customers.Commands
 {
-    public record CreateCustomerCommand : IRequest<CustomerDto>, ICustomerFirstName, ICustomerLastName, ICustomerEmail
+    public class CreateCustomerCommand : IRequest<CustomerDto>
     {
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
-        public string? CompanyName { get; set; }
-        public string? TaxNumber { get; set; }
-        public string? Address { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public Guid CompanyId { get; set; }
         public string? PhoneNumber { get; set; }
         public string? Email { get; set; }
-        public decimal? Balance { get; set; }
+        public decimal Balance { get; set; }
     }
 
     public class CreateCustomerCommandHandler : IRequestHandler<CreateCustomerCommand, CustomerDto>
@@ -36,24 +34,26 @@ namespace Application.Features.Customers.Commands
 
         public async Task<CustomerDto> Handle(CreateCustomerCommand request, CancellationToken cancellationToken)
         {
-            var newCustomer = new Customer
+            var customer = new Customer
             {
-                FirstName = request.FirstName!,
-                LastName = request.LastName!,
-                CompanyName = request.CompanyName,
-                TaxNumber = request.TaxNumber,
-                Address = request.Address,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                CompanyId = request.CompanyId,
                 PhoneNumber = request.PhoneNumber,
                 Email = request.Email,
-                Balance = request.Balance ?? 0,
-                IsActive = true,
+                Balance = request.Balance,
                 CreatedDate = DateTime.UtcNow
             };
 
-            _unitOfWork.CustomerRepository.Add(newCustomer);
+            _unitOfWork.CustomerRepository.Add(customer);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return _mapper.Map<CustomerDto>(newCustomer);
+            // Not: Yeni oluşturulan müşteriyi DTO olarak döndürmek için tekrar okumak en doğrusu.
+            // Şimdilik basitlik adına manuel map'leme yapabiliriz veya AutoMapper kullanabiliriz.
+            // En sağlıklısı GetByIdAsync ile çekmektir.
+            var createdCustomer = await _unitOfWork.CustomerRepository.GetByIdAsync(customer.Id);
+
+            return _mapper.Map<CustomerDto>(createdCustomer);
         }
     }
 }

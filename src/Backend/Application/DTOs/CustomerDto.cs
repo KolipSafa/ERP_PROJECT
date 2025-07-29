@@ -7,10 +7,9 @@ namespace Application.DTOs
         public Guid Id { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
-        public string FullName => $"{FirstName} {LastName}"; // Frontend'in işini kolaylaştıran birleşik bir özellik.
-        public string? CompanyName { get; set; }
-        public string? TaxNumber { get; set; }
-        public string? Address { get; set; }
+        public string FullName => $"{FirstName} {LastName}";
+        public Guid CompanyId { get; set; }
+        public string? CompanyName { get; set; } // Şirket adını DTO'da göstermek kullanışlıdır.
         public string? PhoneNumber { get; set; }
         public string? Email { get; set; }
         public decimal Balance { get; set; }
