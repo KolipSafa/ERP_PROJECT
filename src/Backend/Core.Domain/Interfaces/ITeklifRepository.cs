@@ -1,4 +1,5 @@
 using Core.Domain.Entities;
+using Core.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -7,8 +8,6 @@ namespace Core.Domain.Interfaces
 {
     /// <summary>
     /// Teklif entity'si için veritabanı operasyonlarını tanımlayan arayüz.
-    /// Proje mimarisine uygun olarak, okuma işlemleri asenkron (Task),
-    /// yazma işlemleri ise Unit of Work deseni gereği senkrondur (void).
     /// </summary>
     public interface ITeklifRepository
     {
@@ -18,10 +17,17 @@ namespace Core.Domain.Interfaces
         Task<Teklif?> GetByIdAsync(Guid id);
 
         /// <summary>
-        /// Tüm teklifleri getirir. Gelecekte bu metoda filtreleme, sıralama ve sayfalama
-        /// yetenekleri eklenecektir, tıpkı IProductRepository'de olduğu gibi.
+        /// Belirtilen kriterlere göre filtrelenmiş ve sıralanmış tüm teklifleri getirir.
         /// </summary>
-        Task<IEnumerable<Teklif>> GetAllAsync();
+        Task<IEnumerable<Teklif>> GetAllAsync(
+            Guid? musteriId,
+            DateTime? baslangicTarihi,
+            DateTime? bitisTarihi,
+            QuoteStatus? durum,
+            bool includeInactive,
+            string? sortBy,
+            string? sortOrder
+        );
 
         /// <summary>
         /// Yeni bir teklifi veritabanına eklenmek üzere işaretler.
@@ -30,10 +36,9 @@ namespace Core.Domain.Interfaces
         void Add(Teklif teklif);
 
         /// <summary>
-        /// Mevcut bir teklifi güncellenmek üzere işaretler.
-        /// Kaydetme işlemi IUnitOfWork.SaveChangesAsync() ile yapılır.
+        /// Veritabanından bir teklif satırını silinmek üzere işaretler.
         /// </summary>
-        void Update(Teklif teklif);
+        void DeleteSatir(TeklifSatiri satir);
 
         /// <summary>
         /// Mevcut bir teklifi silinmek üzere işaretler.

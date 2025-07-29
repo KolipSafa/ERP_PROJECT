@@ -4,6 +4,31 @@ Bu belge, ERP projesi üzerinde yapılan günlük çalışmaları özetlemektedi
 
 ---
 
+## 28 Temmuz 2025 Pazartesi
+
+Bugün, projenin üçüncü ve en karmaşık modülü olan **Teklif Yönetimi**'nin backend altyapısı, projenin mevcut Clean Architecture ve CQRS prensiplerine sadık kalınarak uçtan uca geliştirildi. Bu geliştirme, `Product` ve `Customer` modüllerinden gelen verileri bir araya getiren, ilişkisel bir yapıya sahiptir.
+
+### Teklif Modülü Backend Geliştirmesi
+- **Veritabanı ve Domain Katmanı (`Core.Domain`):**
+  - `Teklif` ve `TeklifSatiri` adında iki yeni entity oluşturuldu. `Teklif`, ana teklif bilgilerini (müşteri, tarih, durum vb.) tutarken, `TeklifSatiri` ise o teklife eklenen ürünleri ve fiyatlarını barındırır.
+  - Tekliflerin durumunu (Taslak, Onaylandı, Reddedildi vb.) yönetmek için `QuoteStatus` adında bir `enum` tanımlandı.
+  - Veri erişimini soyutlamak için `ITeklifRepository` arayüzü oluşturuldu ve `IUnitOfWork`'e entegre edildi.
+- **Veri Erişimi ve Altyapı (`Infrastructure`):**
+  - `ApplicationDbContext`'e yeni `DbSet`'ler (`Teklifler`, `TeklifSatirlari`) eklendi.
+  - `TeklifRepository`, `ITeklifRepository` arayüzünü implemente edecek şekilde, verimli sorgulama mantıklarıyla birlikte yazıldı.
+  - Entity Framework Core için `AddTeklifModule` adında yeni bir `migration` oluşturularak veritabanı şeması güncellendi.
+- **İş Mantığı Katmanı (`Application`):**
+  - API'nin güvenli ve temiz bir veri modeli sunması için `TeklifDto` ve `TeklifSatiriDto` oluşturuldu.
+  - Entity-DTO dönüşümleri için `TeklifMappings` profili `AutoMapper` kullanılarak yazıldı.
+  - Tüm CRUD işlemleri için CQRS `Query` ve `Command`'leri (`GetAllTekliflerQuery`, `CreateTeklifCommand` vb.) ve bu komutları işleyen `Handler`'lar oluşturuldu.
+  - `FluentValidation` kullanılarak, yeni teklif oluşturma ve güncelleme komutları için detaylı doğrulama kuralları eklendi.
+- **API Katmanı (`API.Web`):**
+  - Dış dünyanın teklif verilerine erişebilmesi için `/api/teklifler` endpoint'lerini yöneten `TekliflerController` oluşturuldu.
+
+Bugünkü çalışmalarla birlikte, projenin en önemli işlevsel modüllerinden birinin backend altyapısı tamamlanmış ve frontend geliştirmesi için hazır hale getirilmiştir.
+
+---
+
 ## 25 Temmuz 2025 Cuma
 
 Bugünün ana odağı, projenin ikinci ana modülü olan **Müşteri Cari**'nin frontend (kullanıcı arayüzü) katmanını, mevcut Ürün modülünün yüksek standartlarını referans alarak uçtan uca geliştirmek ve bu süreçte karşılaşılan hataları ayıklamaktı.

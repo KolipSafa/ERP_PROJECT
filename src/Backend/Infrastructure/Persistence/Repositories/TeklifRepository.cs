@@ -1,8 +1,11 @@
 using Core.Domain.Entities;
+using Core.Domain.Enums;
 using Core.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Infrastructure.Persistence.Repositories
@@ -20,7 +23,7 @@ namespace Infrastructure.Persistence.Repositories
         {
             // Bir teklifi getirirken, ona ait satırları, müşteriyi ve satırlardaki ürünleri de
             // tek bir sorguda getirmek için Include ve ThenInclude kullanıyoruz.
-            // Bu, "N+1" sorgu problemini önler ve performansı artırır.
+            // Bu metot, IsActive durumuna bakmaksızın kaydı getirir.
             return await _context.Teklifler
                 .Include(t => t.TeklifSatirlari)
                     .ThenInclude(s => s.Urun)
@@ -28,14 +31,57 @@ namespace Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 
-        public async Task<IEnumerable<Teklif>> GetAllAsync()
+        public async Task<IEnumerable<Teklif>> GetAllAsync(
+            Guid? musteriId,
+            DateTime? baslangicTarihi,
+            DateTime? bitisTarihi,
+            QuoteStatus? durum,
+            bool includeInactive,
+            string? sortBy,
+            string? sortOrder)
         {
-            // Tüm teklifleri, müşteri bilgileriyle birlikte getiriyoruz.
-            // Liste görünümünde satır detayları ilk başta gerekmeyebilir, bu yüzden
-            // burada satırları Include etmiyoruz. Bu, sorguyu daha hafif tutar.
-            return await _context.Teklifler
-                .Include(t => t.Musteri)
-                .ToListAsync();
+            var query = _context.Teklifler.Include(t => t.Musteri).AsQueryable();
+
+            // Filtreleme
+            if (!includeInactive)
+            {
+                query = query.Where(t => t.IsActive);
+            }
+            if (musteriId.HasValue)
+            {
+                query = query.Where(t => t.MusteriId == musteriId.Value);
+            }
+            if (durum.HasValue)
+            {
+                query = query.Where(t => t.Durum == durum.Value);
+            }
+            if (baslangicTarihi.HasValue)
+            {
+                query = query.Where(t => t.TeklifTarihi >= baslangicTarihi.Value);
+            }
+            if (bitisTarihi.HasValue)
+            {
+                var bitisTarihiSonu = bitisTarihi.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(t => t.TeklifTarihi <= bitisTarihiSonu);
+            }
+
+            // Sıralama
+            var sortColumns = new Dictionary<string, Expression<Func<Teklif, object>>>
+            {
+                { "date", t => t.TeklifTarihi },
+                { "customer", t => t.Musteri.FirstName },
+                { "amount", t => t.ToplamTutar }
+            };
+
+            var sortByColumn = sortBy?.ToLowerInvariant() ?? "date";
+            if (sortColumns.TryGetValue(sortByColumn, out var sortExpression))
+            {
+                query = sortOrder?.ToLowerInvariant() == "asc"
+                    ? query.OrderBy(sortExpression)
+                    : query.OrderByDescending(sortExpression);
+            }
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public void Add(Teklif teklif)
@@ -43,17 +89,15 @@ namespace Infrastructure.Persistence.Repositories
             _context.Teklifler.Add(teklif);
         }
 
-        public void Update(Teklif teklif)
+        public void DeleteSatir(TeklifSatiri satir)
         {
-            _context.Teklifler.Update(teklif);
+            _context.TeklifSatirlari.Remove(satir);
         }
 
         public void Delete(Teklif teklif)
         {
-            // Genellikle bu metot soft delete için kullanılır, yani IsActive = false yapılır.
-            // Gerçek silme işlemi yerine Update'i çağırıyoruz.
-            // Gerçek silme (hard delete) istenirse ayrı bir metot (örn: HardDelete) yazılır.
             _context.Teklifler.Update(teklif);
         }
     }
 }
+

@@ -19,9 +19,8 @@ namespace API.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] GetAllTekliflerQuery query)
         {
-            var query = new GetAllTekliflerQuery();
             var result = await _mediator.Send(query);
             return Ok(result);
         }
@@ -41,7 +40,7 @@ namespace API.Web.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
-        [HttpPatch("{id}")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTeklifCommand command)
         {
             if (command.Id != Guid.Empty && command.Id != id)
@@ -58,6 +57,14 @@ namespace API.Web.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             var command = new DeleteTeklifCommand(id);
+            await _mediator.Send(command);
+            return NoContent();
+        }
+
+        [HttpPost("{id}/restore")]
+        public async Task<IActionResult> Restore(Guid id)
+        {
+            var command = new RestoreTeklifCommand(id);
             await _mediator.Send(command);
             return NoContent();
         }

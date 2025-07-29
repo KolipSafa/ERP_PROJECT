@@ -41,7 +41,6 @@ namespace Application.Features.Teklifler.Commands
 
             teklifToDelete.IsActive = false;
 
-            _unitOfWork.TeklifRepository.Update(teklifToDelete); // Update metodu IsActive değişikliğini de işler.
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Unit.Value;

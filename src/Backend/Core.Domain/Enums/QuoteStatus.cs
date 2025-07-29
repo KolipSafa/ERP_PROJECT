@@ -2,9 +2,9 @@ namespace Core.Domain.Enums
 {
     public enum QuoteStatus
     {
-        Hazirlaniyor, // Draft
+        Hazırlanıyor, // Draft
         Sunuldu,      // Presented
-        Onaylandi,    // Approved
+        Onaylandı,    // Approved
         Reddedildi    // Rejected
     }
 }

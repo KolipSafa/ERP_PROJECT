@@ -60,7 +60,7 @@ namespace Application.Features.Teklifler.Commands
                 MusteriId = request.MusteriId,
                 TeklifTarihi = request.TeklifTarihi,
                 GecerlilikTarihi = request.GecerlilikTarihi,
-                Durum = QuoteStatus.Hazirlaniyor, // Yeni teklif her zaman bu durumla başlar.
+                Durum = QuoteStatus.Hazırlanıyor, // Yeni teklif her zaman bu durumla başlar.
                 IsActive = true,
                 TeklifNumarasi = await GenerateNewTeklifNumarasi() // Otomatik numara üreteceğiz.
             };

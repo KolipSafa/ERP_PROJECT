@@ -5,6 +5,7 @@ import ProductFormView from '../views/ProductFormView.vue'
 import CustomersView from '../views/CustomersView.vue'
 import CustomerFormView from '../views/CustomerFormView.vue'
 import QuotesView from '../views/QuotesView.vue'
+import QuoteFormView from '../views/QuoteFormView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +51,17 @@ const router = createRouter({
       path: '/quotes',
       name: 'quotes',
       component: QuotesView,
+    },
+    {
+      path: '/quotes/new',
+      name: 'quote-create',
+      component: QuoteFormView,
+    },
+    {
+      path: '/quotes/edit/:id',
+      name: 'quote-edit',
+      component: QuoteFormView,
+      props: true,
     },
     {
       path: '/about',
