@@ -28,6 +28,7 @@ namespace Infrastructure.Persistence.Repositories
                 .Include(t => t.TeklifSatirlari)
                     .ThenInclude(s => s.Urun)
                 .Include(t => t.Musteri)
+                .Include(t => t.Currency)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 
@@ -40,7 +41,7 @@ namespace Infrastructure.Persistence.Repositories
             string? sortBy,
             string? sortOrder)
         {
-            var query = _context.Teklifler.Include(t => t.Musteri).AsQueryable();
+            var query = _context.Teklifler.Include(t => t.Musteri).Include(t => t.Currency).AsQueryable();
 
             // Filtreleme
             if (!includeInactive)

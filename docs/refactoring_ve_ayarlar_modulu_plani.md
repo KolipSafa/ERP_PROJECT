@@ -79,23 +79,20 @@ Bu belge, projeye yeni bir "Ayarlar" modülü eklemek, mevcut modülleri bu yeni
 
 ### **Geliştirme Günlüğü ve Mevcut Durum**
 
-**Tarih:** 29 Temmuz 2025
+**Tarih:** 30 Temmuz 2025
 
 **Tamamlanan Adımlar:**
-*   `✅` **Refactoring ve Altyapı:** Proje genelindeki `Delete` metotları standartlaştırıldı, `Domain` ve `Infrastructure` katmanları yeni `Company` ve `Currency` entity'lerini ve repository'lerini içerecek şekilde tamamen güncellendi.
-*   `✅` **Proje Geneli Sağlamlaştırma:** Geliştirme sırasında `Company` modülündeki `IUnitOfWork` yanlış kullanımlarından kaynaklanan tüm derleme hataları giderildi. `TeklifMappings` ve `CustomerRepository` dosyalarındaki potansiyel `null` referans uyarıları temizlendi.
-*   `✅` **Hibrit Para Birimi Yaklaşımı:**
-    *   **Veritabanı Seeding:** Temel para birimlerini (TRY, USD, EUR) veritabanına otomatik olarak eklemek için `ApplicationDbContext`'e seeding verisi eklendi.
-    *   `SeedCurrencies` adında yeni bir migration oluşturuldu ve veritabanına başarıyla uygulandı.
-*   `✅` **Ayarlar Modülü API (`Currency`):**
-    *   `SettingsController` oluşturuldu.
-    *   `GetCurrenciesQuery` implemente edilerek para birimlerinin listelenmesi sağlandı.
-    *   `CreateCurrencyCommand` ve `Validator`'ı implemente edilerek yeni para birimi ekleme özelliği tamamlandı.
-    *   Controller, bu yeni özellikleri sunacak şekilde güncellendi.
-*   `✅` **Mimari Tutarlılık:** `Application` katmanının `Infrastructure` katmanına yanlışlıkla referans vermesine neden olan bir `using` ifadesi `CreateCurrencyCommandValidator`'dan kaldırılarak mimari bütünlük korundu.
+*   `✅` **Backend - Tam CRUD:** Hem `Company` hem de `Currency` varlıkları için tam CRUD (Create, Read, Update, Delete) işlevselliği, CQRS desenine uygun olarak backend'de implemente edildi.
+*   `✅` **Backend - İlişki Yapılandırması:** Entity Framework'ün neden olduğu `shadow property` ve `FOREIGN KEY` hatalarını kökünden çözmek için `Customer`, `Company`, `Product`, `Currency` ve `Teklif` arasındaki tüm ilişkiler `DbContext` içinde **Fluent API** ile açıkça ve iki yönlü olarak tanımlandı.
+*   `✅` **Backend - Veritabanı Sıfırlama:** Kod ile veritabanı şeması arasındaki senkronizasyonu garantilemek için mevcut tüm migration'lar ve veritabanı silindi; en son ve doğru modele göre sıfırdan, temiz bir başlangıç yapıldı.
+*   `✅` **Frontend - Ayarlar Arayüzü:** `SettingsView` ana sayfası ve `CompanySettings`, `CurrencySettings` alt bileşenleri oluşturularak tam fonksiyonel bir CRUD arayüzü geliştirildi.
+*   `✅` **Frontend - Bildirim Sistemi:** `vue-toastify` entegre edildi ve eski servis tabanlı yapı, modern bir `useNotifier` composable'ı ile değiştirildi.
+*   `✅` **Frontend - Entegrasyon:** Müşteri, Ürün ve Teklif formları, Ayarlar modülünden gelen Firma ve Para Birimi verilerini kullanacak şekilde (`v-autocomplete`, `v-select`) güncellendi.
+*   `✅` **Frontend - Tasarım İyileştirmeleri:** Kullanıcı geri bildirimleri doğrultusunda Ayarlar sayfasının yerleşimi, onay diyalogları ve toast bildirimlerinin tasarımları iyileştirildi.
+*   `✅` **Genel Hata Ayıklama:** Oturum boyunca karşılaşılan çok sayıda DI (Dependency Injection), null referans, dosya kilitleme ve frontend derleme/çalışma zamanı hatası giderildi.
 
 **KALINAN YER VE BİR SONRAKİ ADIM:**
 
-**Mevcut Durum:** Backend projesi hatasız ve uyarısız bir şekilde derleniyor. Ayarlar modülünün para birimi yönetimi için listeleme (`GET`) ve oluşturma (`POST`) işlevleri tamamlandı.
+**Mevcut Durum:** Proje, hem backend hem de frontend'de büyük ölçüde tamamlanmış ve sağlamlaştırılmıştır. Ancak, tüm bu düzeltmelere rağmen, **yeni bir ürün eklerken** hala `FOREIGN KEY constraint "FK_Products_Currencies_CurrencyId"` hatası alınmaktadır.
 
-**➡️ Bir Sonraki Adım:** **Ayarlar modülüne devam etmek.** Para birimleri için `Update` ve `Delete` işlemlerini implemente etmek veya Firmaları (`Company`) yönetmek için CRUD operasyonlarını geliştirmeye başlamak mantıklı bir sonraki adım olacaktır.
+**➡️ Bir Sonraki Adım:** **Bu inatçı hatayı izole edip çözmek.** Taze bir başlangıç yaparak, `ProductFormView.vue`'den gönderilen `payload`'u ve `CreateProductCommandHandler`'ın bu `payload`'u nasıl işlediğini adım adım inceleyerek sorunun kök nedenini kesin olarak tespit etmek.

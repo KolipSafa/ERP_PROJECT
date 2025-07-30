@@ -23,6 +23,7 @@ const navItems = [
   { title: 'Ürünler', icon: 'mdi-package-variant-closed', to: '/products' },
   { title: 'Müşteriler', icon: 'mdi-account-group', to: '/customers' },
   { title: 'Teklifler', icon: 'mdi-file-document-outline', to: '/quotes' },
+  { title: 'Ayarlar', icon: 'mdi-cog', to: '/settings' },
 ]
 </script>
 

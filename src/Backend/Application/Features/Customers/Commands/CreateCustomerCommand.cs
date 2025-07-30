@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Customers.Commands
 {
-    public class CreateCustomerCommand : IRequest<CustomerDto>
+    public class CreateCustomerCommand : IRequest<CustomerDto>, ICustomerFirstName, ICustomerLastName, ICustomerEmail
     {
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
         public Guid CompanyId { get; set; }
         public string? PhoneNumber { get; set; }
         public string? Email { get; set; }
@@ -36,8 +36,8 @@ namespace Application.Features.Customers.Commands
         {
             var customer = new Customer
             {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
+                FirstName = request.FirstName ?? string.Empty,
+                LastName = request.LastName ?? string.Empty,
                 CompanyId = request.CompanyId,
                 PhoneNumber = request.PhoneNumber,
                 Email = request.Email,

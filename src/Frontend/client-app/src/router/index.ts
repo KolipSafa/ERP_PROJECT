@@ -6,6 +6,7 @@ import CustomersView from '../views/CustomersView.vue'
 import CustomerFormView from '../views/CustomerFormView.vue'
 import QuotesView from '../views/QuotesView.vue'
 import QuoteFormView from '../views/QuoteFormView.vue'
+import SettingsView from '../views/SettingsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,6 +63,11 @@ const router = createRouter({
       name: 'quote-edit',
       component: QuoteFormView,
       props: true,
+    },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: SettingsView,
     },
     {
       path: '/about',

@@ -1,9 +1,6 @@
 using MediatR;
+using System;
 
-namespace Application.Features.Settings.Companies.Commands
-{
-    public class DeleteCompanyCommand : IRequest<Unit>
-    {
-        public Guid Id { get; set; }
-    }
-}
+namespace Application.Features.Settings.Companies.Commands;
+
+public record DeleteCompanyCommand(Guid Id) : IRequest;

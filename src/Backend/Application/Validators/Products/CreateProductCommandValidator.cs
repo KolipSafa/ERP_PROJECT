@@ -12,6 +12,7 @@ namespace Application.Validators.Products
             RuleFor(p => p.Name).NotNull().WithMessage("Ürün adı zorunludur.");
             RuleFor(p => p.Price).NotNull().WithMessage("Fiyat zorunludur.");
             RuleFor(p => p.StockQuantity).NotNull().WithMessage("Stok miktarı zorunludur.");
+            RuleFor(p => p.CurrencyId).NotNull().WithMessage("Para birimi seçimi zorunludur.");
             
             // Yeni kural: Açıklama boş olamaz.
             RuleFor(p => p.Description).NotEmpty().WithMessage("Açıklama alanı zorunludur.");

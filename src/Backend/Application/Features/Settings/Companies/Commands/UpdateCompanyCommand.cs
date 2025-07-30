@@ -1,13 +1,15 @@
+using Application.DTOs;
+using Application.Validators.Settings.Companies;
 using MediatR;
+using System;
 
-namespace Application.Features.Settings.Companies.Commands
+namespace Application.Features.Settings.Companies.Commands;
+
+public record UpdateCompanyCommand : IRequest<CompanyDto>, ICompanyName
 {
-    public class UpdateCompanyCommand : IRequest<Unit>
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string? TaxNumber { get; set; }
-        public string? Address { get; set; }
-        public bool IsActive { get; set; }
-    }
+    public Guid Id { get; set; }
+    public string? Name { get; set; }
+    public string? TaxNumber { get; set; }
+    public string? Address { get; set; }
+    public bool? IsActive { get; set; }
 }

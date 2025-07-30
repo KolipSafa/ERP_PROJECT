@@ -18,6 +18,7 @@ namespace Application.Features.Teklifler.Commands
         public Guid? MusteriId { get; set; }
         public DateTime? TeklifTarihi { get; set; }
         public DateTime? GecerlilikTarihi { get; set; }
+        public int? CurrencyId { get; set; }
         public Core.Domain.Enums.QuoteStatus? Durum { get; set; }
         public bool? IsActive { get; set; }
 
@@ -58,6 +59,7 @@ namespace Application.Features.Teklifler.Commands
             teklifToUpdate.MusteriId = request.MusteriId ?? teklifToUpdate.MusteriId;
             teklifToUpdate.TeklifTarihi = request.TeklifTarihi ?? teklifToUpdate.TeklifTarihi;
             teklifToUpdate.GecerlilikTarihi = request.GecerlilikTarihi ?? teklifToUpdate.GecerlilikTarihi;
+            teklifToUpdate.CurrencyId = request.CurrencyId ?? teklifToUpdate.CurrencyId;
             teklifToUpdate.Durum = request.Durum ?? teklifToUpdate.Durum;
             teklifToUpdate.IsActive = request.IsActive ?? teklifToUpdate.IsActive;
 

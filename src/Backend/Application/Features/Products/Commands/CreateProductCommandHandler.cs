@@ -29,6 +29,7 @@ namespace Application.Features.Products.Commands
                 Description = request.Description,
                 Price = request.Price!.Value,
                 StockQuantity = request.StockQuantity!.Value,
+                CurrencyId = request.CurrencyId!.Value,
                 IsActive = true
             };
 

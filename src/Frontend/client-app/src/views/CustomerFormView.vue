@@ -6,91 +6,87 @@ import CustomerService, {
   type CreateCustomerPayload, 
   type UpdateCustomerPayload 
 } from '@/services/CustomerService';
+import SettingsService from '@/services/SettingsService';
+import type { CompanyDto } from '@/services/dtos/CompanyDto';
+import NotificationService from '@/services/NotificationService';
+
+import { useNotifier } from '@/composables/useNotifier';
 
 const route = useRoute();
 const router = useRouter();
+const notifier = useNotifier();
 
-// --- Mod ve ID Yönetimi ---
-// `computed` property'ler, bağımlı oldukları kaynak (route.params.id) değiştiğinde
-// otomatik olarak yeniden hesaplanan, performanslı ve reaktif değişkenlerdir.
 const customerId = computed(() => route.params.id as string | undefined);
 const isEditMode = computed(() => !!customerId.value);
 const pageTitle = computed(() => isEditMode.value ? 'Müşteri Düzenle' : 'Yeni Müşteri Ekle');
 
-// --- Form Veri Modeli ---
-// `Partial<CustomerDto>` kullanıyoruz çünkü yeni müşteri eklerken form başlangıçta boştur
-// ve tüm alanlar hemen dolu olmayabilir. Bu, TypeScript'in "property 'x' is missing"
-// hatası vermesini engeller.
 const customer = ref<Partial<CustomerDto>>({
   firstName: '',
   lastName: '',
-  companyName: '',
+  companyId: undefined,
   taxNumber: '',
   address: '',
   phoneNumber: '',
   email: '',
-  isActive: true, // Yeni müşteriler varsayılan olarak aktif başlar.
+  isActive: true,
 });
 
+const companies = ref<CompanyDto[]>([]);
 const loading = ref(false);
 const errorMessage = ref('');
 
-// --- Veri Yükleme (Sadece Düzenleme Modunda) ---
-// `onMounted`, component DOM'a eklendiğinde bir kereliğine çalışan bir "lifecycle hook"tur.
-// Düzenleme modundaysak, müşterinin mevcut verilerini backend'den çekmek için en doğru yerdir.
 onMounted(async () => {
-  if (isEditMode.value) {
-    loading.value = true;
-    try {
-      const response = await CustomerService.getById(customerId.value!);
-      customer.value = response.data;
-    } catch (error) {
-      console.error('Müşteri getirilirken hata:', error);
-      errorMessage.value = 'Müşteri bilgileri yüklenemedi.';
-    } finally {
-      loading.value = false;
+  loading.value = true;
+  try {
+    const companiesResponse = await SettingsService.getCompanies();
+    companies.value = companiesResponse.data;
+
+    if (isEditMode.value) {
+      const customerResponse = await CustomerService.getById(customerId.value!);
+      customer.value = customerResponse.data;
     }
+  } catch (error) {
+    notifier.error('Veriler yüklenirken bir hata oluştu.');
+    console.error(error);
+  } finally {
+    loading.value = false;
   }
 });
 
-// --- Kaydetme Mantığı ---
 const saveCustomer = async () => {
   loading.value = true;
   errorMessage.value = '';
   try {
     if (isEditMode.value) {
-      // Düzenleme modunda, `UpdateCustomerPayload` tipine uygun bir nesne oluştururuz.
-      // Bu nesne sadece backend'in güncellemesine izin verilen alanları içerir.
       const payload: UpdateCustomerPayload = {
         firstName: customer.value.firstName,
         lastName: customer.value.lastName,
-        companyName: customer.value.companyName,
+        companyId: customer.value.companyId,
         taxNumber: customer.value.taxNumber,
         address: customer.value.address,
         phoneNumber: customer.value.phoneNumber,
         email: customer.value.email,
         isActive: customer.value.isActive,
-        // `balance` gibi alanları buradan gönderemeyiz, çünkü payload tipimiz buna izin vermez.
       };
       await CustomerService.update(customerId.value!, payload);
+      notifier.success('Müşteri başarıyla güncellendi.');
     } else {
-      // Yeni ekleme modunda, `CreateCustomerPayload` tipine uygun bir nesne oluştururuz.
       const payload: CreateCustomerPayload = {
         firstName: customer.value.firstName!,
         lastName: customer.value.lastName!,
-        companyName: customer.value.companyName,
+        companyId: customer.value.companyId,
         taxNumber: customer.value.taxNumber,
         address: customer.value.address,
         phoneNumber: customer.value.phoneNumber,
         email: customer.value.email,
       };
       await CustomerService.create(payload);
+      notifier.success('Müşteri başarıyla oluşturuldu.');
     }
-    router.push('/customers'); // Başarılı işlem sonrası listeleme sayfasına yönlendir.
+    router.push('/customers');
   } catch (error: any) {
-    console.error('Müşteri kaydedilirken hata:', error);
-    // Backend'den gelen FluentValidation hatalarını göstermek için ideal bir yapı:
     errorMessage.value = error.response?.data?.errors?.[0]?.ErrorMessage || 'Bir hata oluştu.';
+    notifier.error(errorMessage.value);
   } finally {
     loading.value = false;
   }
@@ -126,10 +122,14 @@ const saveCustomer = async () => {
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="6">
-              <v-text-field
-                v-model="customer.companyName"
-                label="Firma Adı"
-              ></v-text-field>
+              <v-autocomplete
+                v-model="customer.companyId"
+                :items="companies"
+                item-title="name"
+                item-value="id"
+                label="Firma"
+                clearable
+              ></v-autocomplete>
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field
@@ -157,8 +157,6 @@ const saveCustomer = async () => {
               ></v-text-field>
             </v-col>
             
-            <!-- Bakiye alanı sadece düzenleme modunda ve sadece okunabilir olarak gösterilir.
-                 Çünkü bakiye, faturalar ve ödemelerle otomatik değişen bir alandır, manuel değiştirilmemelidir. -->
             <v-col v-if="isEditMode" cols="12" md="6">
               <v-text-field
                 :model-value="new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(customer.balance || 0)"

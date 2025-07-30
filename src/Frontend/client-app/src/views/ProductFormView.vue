@@ -6,9 +6,13 @@ import ProductService, {
   type CreateProductPayload, 
   type UpdateProductPayload 
 } from '@/services/ProductService';
+import SettingsService from '@/services/SettingsService';
+import type { CurrencyDto } from '@/services/dtos/CurrencyDto';
+import { useNotifier } from '@/composables/useNotifier';
 
 const route = useRoute();
 const router = useRouter();
+const notifier = useNotifier();
 
 const productId = computed(() => route.params.id as string | undefined);
 const isEditMode = computed(() => !!productId.value);
@@ -17,27 +21,37 @@ const product = ref<Partial<ProductDto>>({
   name: '',
   description: '',
   price: 0,
+  currencyId: undefined,
   stockQuantity: 0,
   sku: '',
   isActive: true,
 });
 
+const currencies = ref<CurrencyDto[]>([]);
 const loading = ref(false);
 const errorMessage = ref('');
 const pageTitle = computed(() => isEditMode.value ? 'Ürün Düzenle' : 'Yeni Ürün Ekle');
 
 onMounted(async () => {
-  if (isEditMode.value) {
-    loading.value = true;
-    try {
-      const response = await ProductService.getById(Number(productId.value));
-      product.value = response.data;
-    } catch (error) {
-      console.error('Ürün getirilirken hata:', error);
-      errorMessage.value = 'Ürün bilgileri yüklenemedi.';
-    } finally {
-      loading.value = false;
+  loading.value = true;
+  try {
+    const currencyResponse = await SettingsService.getCurrencies();
+    currencies.value = currencyResponse.data;
+
+    if (isEditMode.value) {
+      const productResponse = await ProductService.getById(Number(productId.value));
+      product.value = productResponse.data;
+    } else {
+      // Yeni ürün eklerken varsayılan para birimini ata (örn. listedeki ilk para birimi)
+      if (currencies.value.length > 0) {
+        product.value.currencyId = currencies.value[0].id;
+      }
     }
+  } catch (error) {
+    notifier.error('Veriler yüklenirken bir hata oluştu.');
+    console.error(error);
+  } finally {
+    loading.value = false;
   }
 });
 
@@ -50,24 +64,28 @@ const saveProduct = async () => {
         name: product.value.name,
         description: product.value.description,
         price: product.value.price,
+        currencyId: product.value.currencyId,
         stockQuantity: product.value.stockQuantity,
         sku: product.value.sku,
         isActive: product.value.isActive,
       };
       await ProductService.update(Number(productId.value), payload);
+      notifier.success('Ürün başarıyla güncellendi.');
     } else {
       const payload: CreateProductPayload = {
         name: product.value.name!,
         description: product.value.description,
         price: product.value.price!,
+        currencyId: product.value.currencyId!,
         stockQuantity: product.value.stockQuantity!,
       };
       await ProductService.create(payload);
+      notifier.success('Ürün başarıyla oluşturuldu.');
     }
     router.push('/products');
   } catch (error: any) {
-    console.error('Ürün kaydedilirken hata:', error);
     errorMessage.value = error.response?.data?.errors?.[0]?.ErrorMessage || 'Bir hata oluştu.';
+    notifier.error(errorMessage.value);
   } finally {
     loading.value = false;
   }
@@ -95,7 +113,6 @@ const saveProduct = async () => {
               ></v-text-field>
             </v-col>
             
-            <!-- SKU Alanı Artık Koşullu -->
             <v-col v-if="isEditMode" cols="12" md="6">
               <v-text-field
                 v-model="product.sku"
@@ -114,14 +131,22 @@ const saveProduct = async () => {
                 rows="3"
               ></v-textarea>
             </v-col>
-            <v-col cols="12" md="6">
+            <v-col cols="12" md="4">
               <v-text-field
                 v-model.number="product.price"
                 label="Fiyat"
                 type="number"
-                prefix="₺"
                 :rules="[v => v >= 0 || 'Fiyat negatif olamaz']"
               ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="2">
+              <v-select
+                v-model="product.currencyId"
+                :items="currencies"
+                item-title="code"
+                item-value="id"
+                label="Para Birimi"
+              ></v-select>
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field

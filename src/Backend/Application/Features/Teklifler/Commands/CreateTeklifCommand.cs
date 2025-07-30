@@ -20,6 +20,7 @@ namespace Application.Features.Teklifler.Commands
         public Guid MusteriId { get; set; }
         public DateTime TeklifTarihi { get; set; }
         public DateTime GecerlilikTarihi { get; set; }
+        public int CurrencyId { get; set; }
         
         // Teklif oluşturulurken satırlar da birlikte gönderilir.
         public List<CreateTeklifSatiriDto> TeklifSatirlari { get; set; } = new();
@@ -60,6 +61,7 @@ namespace Application.Features.Teklifler.Commands
                 MusteriId = request.MusteriId,
                 TeklifTarihi = request.TeklifTarihi,
                 GecerlilikTarihi = request.GecerlilikTarihi,
+                CurrencyId = request.CurrencyId,
                 Durum = QuoteStatus.Hazırlanıyor, // Yeni teklif her zaman bu durumla başlar.
                 IsActive = true,
                 TeklifNumarasi = await GenerateNewTeklifNumarasi() // Otomatik numara üreteceğiz.

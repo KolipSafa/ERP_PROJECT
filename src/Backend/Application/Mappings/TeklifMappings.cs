@@ -19,6 +19,10 @@ namespace Application.Mappings
                     opt => opt.MapFrom(src => src.Musteri != null ? $"{src.Musteri.FirstName} {src.Musteri.LastName}" : string.Empty)
                 )
                 .ForMember(
+                    dest => dest.CurrencyCode,
+                    opt => opt.MapFrom(src => src.Currency != null ? src.Currency.Code : null)
+                )
+                .ForMember(
                     dest => dest.Durum, 
                     opt => opt.MapFrom(src => src.Durum.ToString())
                 );

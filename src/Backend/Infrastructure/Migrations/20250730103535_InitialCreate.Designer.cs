@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250729134219_InitialSchema")]
-    partial class InitialSchema
+    [Migration("20250730103535_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -75,6 +75,32 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Currencies");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Code = "TRY",
+                            IsActive = true,
+                            Name = "Türk Lirası",
+                            Symbol = "₺"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Code = "USD",
+                            IsActive = true,
+                            Name = "Amerikan Doları",
+                            Symbol = "$"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Code = "EUR",
+                            IsActive = true,
+                            Name = "Euro",
+                            Symbol = "€"
+                        });
                 });
 
             modelBuilder.Entity("Core.Domain.Entities.Customer", b =>
@@ -87,9 +113,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("CompanyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("CompanyId1")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")
@@ -118,8 +141,6 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("CompanyId1");
 
                     b.HasIndex("Email")
                         .IsUnique()
@@ -242,14 +263,10 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Domain.Entities.Customer", b =>
                 {
                     b.HasOne("Core.Domain.Entities.Company", "Company")
-                        .WithMany()
+                        .WithMany("Customers")
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("Core.Domain.Entities.Company", null)
-                        .WithMany("Customers")
-                        .HasForeignKey("CompanyId1");
 
                     b.Navigation("Company");
                 });
@@ -257,7 +274,7 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Domain.Entities.Product", b =>
                 {
                     b.HasOne("Core.Domain.Entities.Currency", "Currency")
-                        .WithMany()
+                        .WithMany("Products")
                         .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -268,7 +285,7 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Domain.Entities.Teklif", b =>
                 {
                     b.HasOne("Core.Domain.Entities.Currency", "Currency")
-                        .WithMany()
+                        .WithMany("Teklifler")
                         .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -306,6 +323,13 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Domain.Entities.Company", b =>
                 {
                     b.Navigation("Customers");
+                });
+
+            modelBuilder.Entity("Core.Domain.Entities.Currency", b =>
+                {
+                    b.Navigation("Products");
+
+                    b.Navigation("Teklifler");
                 });
 
             modelBuilder.Entity("Core.Domain.Entities.Teklif", b =>

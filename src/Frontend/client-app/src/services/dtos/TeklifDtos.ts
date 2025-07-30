@@ -26,6 +26,8 @@ export interface TeklifDto {
   teklifTarihi: string; // ISO 8601 formatında tarih (örn: "2025-07-29T10:00:00Z")
   gecerlilikTarihi: string; // ISO 8601 formatında tarih
   toplamTutar: number;
+  currencyId: number;
+  currencyCode?: string;
   durum: string; // Enum'ın string hali (örn: "Hazırlanıyor")
   isActive: boolean;
   teklifSatirlari: TeklifSatiriDto[];
@@ -40,6 +42,7 @@ export interface CreateTeklifPayload {
   musteriId: string;
   teklifTarihi: string;
   gecerlilikTarihi: string;
+  currencyId: number;
   teklifSatirlari: {
     urunId: number;
     aciklama?: string;
@@ -56,6 +59,7 @@ export interface UpdateTeklifPayload {
   musteriId: string;
   teklifTarihi: string;
   gecerlilikTarihi: string;
+  currencyId: number;
   durum: number;
   isActive: boolean;
   teklifSatirlari: {

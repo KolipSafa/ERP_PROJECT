@@ -23,7 +23,7 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<IEnumerable<Currency>> GetAllAsync()
         {
-            return await _context.Currencies.ToListAsync();
+            return await _context.Currencies.Where(c => c.IsActive).ToListAsync();
         }
 
         public void Add(Currency currency)

@@ -111,6 +111,7 @@ const updateStatus = async (teklifToUpdate: TeklifDto, yeniDurumValue: number) =
       musteriId: guncelTeklif.musteriId,
       teklifTarihi: guncelTeklif.teklifTarihi,
       gecerlilikTarihi: guncelTeklif.gecerlilikTarihi,
+      currencyId: guncelTeklif.currencyId,
       durum: yeniDurumValue,
       isActive: guncelTeklif.isActive,
       teklifSatirlari: guncelTeklif.teklifSatirlari.map(s => ({ id: s.id, urunId: s.urunId, aciklama: s.aciklama, miktar: s.miktar, birimFiyat: s.birimFiyat })),
@@ -208,7 +209,7 @@ const getStatusColor = (status: string) => {
             <span>{{ formatDate(item.teklifTarihi) }}</span>
           </template>
           <template v-slot:item.toplamTutar="{ item }">
-            <span>{{ formatCurrency(item.toplamTutar) }}</span>
+            <span>{{ formatCurrency(item.toplamTutar, item.currencyCode) }}</span>
           </template>
           <template v-slot:item.durum="{ item }">
             <v-chip :color="getStatusColor(item.durum)" size="small">{{ item.durum }}</v-chip>

@@ -4,6 +4,7 @@ using Application.Mappings;
 using Core.Domain.Interfaces;
 using FluentValidation;
 using Infrastructure.Persistence;
+using Infrastructure.Persistence.Repositories; // Eklendi
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -37,6 +38,9 @@ builder.Services.AddAutoMapper(typeof(ProductMappings).Assembly);
 
 // Add Unit of Work and Repositories
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ICompanyRepository, CompanyRepository>(); // Eklendi
+builder.Services.AddScoped<ICurrencyRepository, CurrencyRepository>(); // Eklendi
+
 
 // Configure MediatR with Pipeline Behaviors
 builder.Services.AddMediatR(cfg => {

@@ -24,7 +24,7 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<IEnumerable<Company>> GetAllAsync()
         {
-            return await _context.Companies.ToListAsync();
+            return await _context.Companies.Where(c => c.IsActive).ToListAsync();
         }
 
         public void Add(Company company)

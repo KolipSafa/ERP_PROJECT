@@ -10,7 +10,7 @@ using AutoMapper;
 
 namespace Application.Features.Customers.Commands
 {
-    public class UpdateCustomerCommand : IRequest<Unit>
+    public class UpdateCustomerCommand : IRequest<Unit>, ICustomerFirstName, ICustomerLastName, ICustomerEmail
     {
         public Guid Id { get; set; }
         public string? FirstName { get; set; }

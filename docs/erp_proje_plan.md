@@ -113,20 +113,30 @@ Bu aşamada, müşterilere ürünler içeren tekliflerin oluşturulacağı ve y�
 
 ---
 
-#### **Aşama 4: Ayarlar Modülü** `⏳ Geliştiriliyor`
+#### **Aşama 4: Ayarlar Modülü** `✅ Tamamlandı`
 
-Bu aşamada, para birimi ve firmalar gibi sistem genelindeki verilerin yönetileceği altyapı oluşturulmaktadır.
+Bu aşamada, para birimi ve firmalar gibi sistem genelindeki verilerin yönetileceği altyapı hem backend hem de frontend olarak tamamlanmıştır. Mevcut modüller bu yeni yapıya entegre edilmiştir.
 
-**4.1. Backend Geliştirme (.NET API)** `⏳ Geliştiriliyor`
-*   **Mimari ve Entity'ler:** `Currency` ve `Company` entity'leri oluşturuldu. `Customer`, `Product`, `Teklif` gibi mevcut entity'ler, bu yeni yapıları kullanacak şekilde (`CurrencyId`, `CompanyId`) güncellendi. `✅ Tamamlandı`
-*   **Veritabanı Seeding:** Uygulama ilk kurulduğunda temel para birimlerinin (TRY, USD, EUR) veritabanına otomatik olarak eklenmesi (seeding) sağlandı. `✅ Tamamlandı`
-*   **Repository ve Unit of Work:** Yeni entity'ler için `ICurrencyRepository`, `ICompanyRepository` ve implementasyonları oluşturularak `IUnitOfWork`'e entegre edildi. `✅ Tamamlandı`
-*   **CQRS (Para Birimi):**
-    *   `GetCurrenciesQuery` ve işleyicisi oluşturularak tüm para birimlerinin listelenmesi sağlandı. `✅ Tamamlandı`
-    *   `CreateCurrencyCommand`, işleyicisi ve `FluentValidation` tabanlı doğrulayıcısı oluşturularak sisteme yeni para birimi ekleme işlevselliği kazandırıldı. `✅ Tamamlandı`
-*   **API Controller:** `SettingsController` oluşturuldu. Para birimleri için `GET /api/settings/currencies` ve `POST /api/settings/currencies` endpoint'leri implemente edildi. `✅ Tamamlandı`
-*   **Proje Geneli Sağlamlaştırma:** Geliştirme sırasında ortaya çıkan, `IUnitOfWork`'ün yanlış kullanımı ve `null` referans uyarıları gibi çok sayıda derleme hatası ve uyarı proje genelinde temizlendi. `✅ Tamamlandı`
+**4.1. Backend Geliştirme (.NET API)** `✅ Tamamlandı`
+*   **Entity ve İlişkiler:** `Currency` ve `Company` entity'leri, ilgili koleksiyonlarla (`ICollection`) zenginleştirildi. `Customer`, `Product`, `Teklif` entity'leri bu yeni yapıları kullanacak şekilde (`CurrencyId`, `CompanyId`) güncellendi.
+*   **Veritabanı Yapılandırması:** Entity'ler arasındaki tüm ilişkiler (`Customer-Company`, `Product-Currency`, `Teklif-Currency` vb.) `ApplicationDbContext` içinde **Fluent API** kullanılarak açıkça ve hatasız bir şekilde tanımlandı. `shadow property` oluşumuna neden olan tüm belirsizlikler giderildi.
+*   **Veritabanı Sıfırlama:** Projenin tutarlı bir duruma gelmesi için mevcut migration'lar temizlendi, veritabanı silindi ve en son, doğru modele göre sıfırdan yeniden oluşturuldu.
+*   **Repository ve Unit of Work:** `ICurrencyRepository`, `ICompanyRepository` ve implementasyonları oluşturuldu. `GetAllAsync` metotları, `soft delete` mantığına uygun olarak sadece aktif kayıtları getirecek şekilde güncellendi.
+*   **CQRS (Firma ve Para Birimi):** Hem `Company` hem de `Currency` için tam **CRUD** (Create, Read, Update, Delete) operasyonlarını yöneten `Query`, `Command`, `Handler` ve `Validator`'lar implemente edildi.
+*   **API Controller:** `SettingsController`, hem para birimleri hem de firmalar için tam CRUD işlevselliği sunan `GET`, `POST`, `PUT`, `DELETE` endpoint'lerini içerecek şekilde tamamlandı.
+*   **DI ve Hata Ayıklama:** `Program.cs` dosyasında eksik olan repository bağımlılıkları eklendi. Proje genelindeki `null` referans uyarıları ve hataları giderildi.
 
-**4.2. Frontend Geliştirme (Vue.js)** `▶️ Henüz Başlanmadı`
-*   Ayarlar modülü için kullanıcı arayüzü geliştirilecek.
-*   Mevcut modüller (Müşteri, Ürün, Teklif), yeni Ayarlar API'sini (firma ve para birimi seçimi için) kullanacak şekilde güncellenecek.
+**4.2. Frontend Geliştirme (Vue.js)** `✅ Tamamlandı`
+*   **Bildirim Sistemi:** Eski `NotificationService` kaldırılarak yerine modern, `composable` tabanlı `useNotifier` sistemi kuruldu. `vue-toastify` kütüphanesi entegre edildi ve tüm CRUD işlemlerinde kullanıcıya geri bildirim (başarı/hata) verecek şekilde kullanıldı.
+*   **Ayarlar Arayüzü (`SettingsView.vue`):**
+    *   Sayfa, solda dar bir navigasyon menüsü ve sağda geniş bir içerik alanı olacak şekilde modern bir "master-detail" görünümüne kavuşturuldu.
+    *   `CompanySettings.vue` ve `CurrencySettings.vue` adında, kendi içlerinde tam CRUD işlevselliği barındıran iki bileşen oluşturuldu.
+*   **API Servisi (`SettingsService.ts`):** Ayarlar modülünün tüm backend iletişimini yönetmek için `Company` ve `Currency` DTO'ları ile birlikte yeni bir servis oluşturuldu.
+*   **Entegrasyon:**
+    *   `CustomerFormView.vue`: Firma seçimi için metin kutusu, `v-autocomplete` ile değiştirilerek Ayarlar modülüne bağlandı.
+    *   `ProductFormView.vue`: Fiyat alanının yanına para birimi seçimi için `v-select` eklendi.
+    *   `QuoteFormView.vue`: Teklifin para birimini belirlemek için `v-select` eklendi ve toplam tutar formatlaması dinamik hale getirildi.
+*   **Tasarım ve UX İyileştirmeleri:**
+    *   Kullanıcı geri bildirimleri doğrultusunda Ayarlar sayfasının yerleşimi optimize edildi.
+    *   Toast bildirimlerinin (opaklık, boyut, ikon) ve silme onayı diyaloglarının tasarımları projenin geneliyle tutarlı hale getirildi.
+*   **Hata Ayıklama:** Oturum boyunca karşılaşılan çok sayıda frontend hatası (hatalı import yolları, tanımsız değişkenler, tekrar eden kodlar) giderildi.

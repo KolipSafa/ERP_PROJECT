@@ -18,6 +18,10 @@ namespace Application.Validators.Teklifler
                 .NotEmpty().WithMessage("Müşteri ID'si boş olamaz.")
                 .MustAsync(MusteriVarMi).WithMessage("Belirtilen müşteri bulunamadı.");
 
+            RuleFor(v => v.CurrencyId)
+                .NotEmpty().WithMessage("Para birimi seçimi zorunludur.")
+                .MustAsync(CurrencyVarMi).WithMessage("Belirtilen para birimi bulunamadı.");
+
             RuleFor(v => v.TeklifTarihi)
                 .NotEmpty().WithMessage("Teklif tarihi zorunludur.");
 
@@ -36,6 +40,12 @@ namespace Application.Validators.Teklifler
         {
             var musteri = await _unitOfWork.CustomerRepository.GetByIdAsync(musteriId);
             return musteri != null;
+        }
+
+        private async Task<bool> CurrencyVarMi(int currencyId, CancellationToken cancellationToken)
+        {
+            var currency = await _unitOfWork.CurrencyRepository.GetByIdAsync(currencyId);
+            return currency != null;
         }
     }
 

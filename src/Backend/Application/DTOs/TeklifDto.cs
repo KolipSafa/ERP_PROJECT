@@ -13,6 +13,8 @@ namespace Application.DTOs
         public DateTime TeklifTarihi { get; set; }
         public DateTime GecerlilikTarihi { get; set; }
         public decimal ToplamTutar { get; set; }
+        public int CurrencyId { get; set; }
+        public string? CurrencyCode { get; set; }
         public string Durum { get; set; } = string.Empty; // Enum'ı string'e çevirerek göndereceğiz.
         public bool IsActive { get; set; }
         public List<TeklifSatiriDto> TeklifSatirlari { get; set; } = new List<TeklifSatiriDto>();

@@ -1,4 +1,4 @@
-// D:\yazilim_projelerim\ERP_PROJECT\src\Backend\Core.Domain\Entities\Customer.cs
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Core.Domain.Entities
 {
@@ -27,8 +27,10 @@ namespace Core.Domain.Entities
         
         // Müşterinin bağlı olduğu şirketin ID'si. Bu alan zorunludur.
         public Guid CompanyId { get; set; }
+        
         // Entity Framework'ün CompanyId üzerinden ilgili Company nesnesini otomatik olarak
         // yüklemesini sağlayan "navigation property".
+        // [ForeignKey] attribute'u ile bu ilişkinin hangi property üzerinden kurulduğunu netleştiriyoruz.
         public Company? Company { get; set; }
 
         public string? PhoneNumber { get; set; }

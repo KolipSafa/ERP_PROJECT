@@ -41,6 +41,10 @@ namespace Application.Features.Products.Commands
             {
                 productToUpdate.Price = request.Price.Value;
             }
+            if (request.CurrencyId.HasValue)
+            {
+                productToUpdate.CurrencyId = request.CurrencyId.Value;
+            }
             if (request.StockQuantity.HasValue)
             {
                 productToUpdate.StockQuantity = request.StockQuantity.Value;

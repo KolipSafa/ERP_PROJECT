@@ -24,7 +24,8 @@ namespace Infrastructure.Persistence
             // Customer - Email unique index
             modelBuilder.Entity<Customer>()
                 .HasIndex(c => c.Email)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[Email] IS NOT NULL");
 
             // TeklifSatiri - Product relationship (Fix for multiple cascade paths)
             // Bir ürün silinirse, geçmiş tekliflerdeki satırları silinmemelidir.
@@ -37,21 +38,21 @@ namespace Infrastructure.Persistence
             // Bir şirket silinirse, o şirkete bağlı müşteriler silinmemelidir.
             modelBuilder.Entity<Customer>()
                 .HasOne(c => c.Company)
-                .WithMany()
+                .WithMany(co => co.Customers)
                 .HasForeignKey(c => c.CompanyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Bir para birimi silinirse, o para birimini kullanan ürünler silinmemelidir.
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.Currency)
-                .WithMany()
+                .WithMany(c => c.Products)
                 .HasForeignKey(p => p.CurrencyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Bir para birimi silinirse, o para birimini kullanan teklifler silinmemelidir.
             modelBuilder.Entity<Teklif>()
                 .HasOne(t => t.Currency)
-                .WithMany()
+                .WithMany(c => c.Teklifler)
                 .HasForeignKey(t => t.CurrencyId)
                 .OnDelete(DeleteBehavior.Restrict);
 

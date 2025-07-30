@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router';
 import TeklifService from '@/services/TeklifService';
 import CustomerService from '@/services/CustomerService';
 import ProductService from '@/services/ProductService';
+import SettingsService from '@/services/SettingsService';
 import type { 
   TeklifDto, 
   TeklifSatiriDto, 
@@ -12,10 +13,13 @@ import type {
 } from '@/services/dtos/TeklifDtos';
 import type { CustomerDto } from '@/services/CustomerService';
 import type { ProductDto } from '@/services/ProductService';
+import type { CurrencyDto } from '@/services/dtos/CurrencyDto';
 import debounce from 'lodash.debounce';
+import { useNotifier } from '@/composables/useNotifier';
 
 const route = useRoute();
 const router = useRouter();
+const notifier = useNotifier();
 
 // --- Mod ve ID Yönetimi ---
 const quoteId = computed(() => route.params.id as string | undefined);
@@ -27,19 +31,26 @@ const teklif = ref<Partial<TeklifDto>>({
   musteriId: undefined,
   teklifTarihi: new Date().toISOString().split('T')[0],
   gecerlilikTarihi: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString().split('T')[0],
+  currencyId: undefined,
   durum: 'Hazırlanıyor',
   teklifSatirlari: [],
 });
-const originalTeklif = ref<Partial<TeklifDto> | null>(null);
-const deletedSatirIds = ref<string[]>([]);
 
-// --- Müşteri, Ürün ve Durum Verileri ---
+// --- Müşteri, Ürün, Para Birimi ve Durum Verileri ---
 const customers = ref<CustomerDto[]>([]);
 const products = ref<ProductDto[]>([]);
+const currencies = ref<CurrencyDto[]>([]);
 const customerSearch = ref('');
 const productSearch = ref('');
 const selectedProduct = ref<ProductDto | null>(null);
-// Backend'in enum'ın sayısal değerini beklemesi nedeniyle durumu metin/değer çiftleri olarak yönetiyoruz.
+
+const statusStringMap: { [key: string]: number } = {
+  'Hazırlanıyor': 0,
+  'Sunuldu': 1,
+  'Onaylandı': 2,
+  'Reddedildi': 3,
+};
+
 const statusOptions = [
   { title: 'Hazırlanıyor', value: 0 },
   { title: 'Sunuldu', value: 1 },
@@ -47,37 +58,49 @@ const statusOptions = [
   { title: 'Reddedildi', value: 3 },
 ];
 
-
 const loading = ref(false);
 const errorMessage = ref('');
 
 // Para formatlama fonksiyonu
-const formatCurrency = (value: number) => {
+const formatCurrency = (value: number, currencyCode: string = 'TRY') => {
   if (typeof value !== 'number') return '';
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(value);
+  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: currencyCode }).format(value);
 };
 
 // --- Veri Yükleme ---
 onMounted(async () => {
   loading.value = true;
   try {
-    // Müşteri ve Ürün listelerini paralel olarak çek
-    const [customerResponse, productResponse] = await Promise.all([
+    const [customerResponse, productResponse, currencyResponse] = await Promise.all([
       CustomerService.getAll({ includeInactive: false }),
-      ProductService.getAll({ includeInactive: false }) // Başlangıç ürün listesi
+      ProductService.getAll({ includeInactive: false }),
+      SettingsService.getCurrencies()
     ]);
     customers.value = customerResponse.data;
     products.value = productResponse.data;
+    currencies.value = currencyResponse.data;
 
     if (isEditMode.value) {
       const response = await TeklifService.getById(quoteId.value!);
       response.data.teklifTarihi = response.data.teklifTarihi.split('T')[0];
       response.data.gecerlilikTarihi = response.data.gecerlilikTarihi.split('T')[0];
-      teklif.value = response.data;
-      originalTeklif.value = JSON.parse(JSON.stringify(response.data));
+      
+      // Durumu string'den sayısal değere çevir
+      const statusString = response.data.durum as keyof typeof statusStringMap;
+      const statusValue = statusStringMap[statusString];
+
+      teklif.value = {
+        ...response.data,
+        durum: statusValue,
+      };
+    } else {
+      if (currencies.value.length > 0) {
+        teklif.value.currencyId = currencies.value.find(c => c.code === 'TRY')?.id ?? currencies.value[0].id;
+      }
     }
   } catch (error) {
-    errorMessage.value = 'Veriler yüklenirken bir hata oluştu.';
+    notifier.error('Veriler yüklenirken bir hata oluştu.');
+    console.error(error);
   } finally {
     loading.value = false;
   }
@@ -89,7 +112,6 @@ watch(productSearch, debounce(async (val: string) => {
     const response = await ProductService.getAll({ search: val, includeInactive: false });
     products.value = response.data;
   } else if (!val) {
-    // Arama kutusu boşaldığında başlangıç listesini tekrar yükle
     const response = await ProductService.getAll({ includeInactive: false });
     products.value = response.data;
   }
@@ -125,9 +147,6 @@ function addProductToQuote() {
 }
 
 function removeSatir(satir: TeklifSatiriDto) {
-  if (!satir.id.startsWith('new_')) {
-    deletedSatirIds.value.push(satir.id);
-  }
   teklif.value.teklifSatirlari = teklif.value.teklifSatirlari?.filter(s => s.id !== satir.id);
 }
 
@@ -137,6 +156,11 @@ const toplamTutar = computed(() => {
     satir.toplam = toplam;
     return acc + toplam;
   }, 0) || 0;
+});
+
+const selectedCurrencyCode = computed(() => {
+  const currency = currencies.value.find(c => c.id === teklif.value.currencyId);
+  return currency ? currency.code : 'TRY';
 });
 
 
@@ -152,8 +176,8 @@ const saveQuote = async () => {
     }
     router.push('/quotes');
   } catch (error: any) {
-    console.error('Teklif kaydedilirken hata:', error);
     errorMessage.value = error.response?.data?.errors?.[0]?.ErrorMessage || 'Bir hata oluştu.';
+    notifier.error(errorMessage.value);
   } finally {
     loading.value = false;
   }
@@ -161,12 +185,13 @@ const saveQuote = async () => {
 
 async function handleCreate() {
   const gecerlilikTarihi = new Date(teklif.value.gecerlilikTarihi!);
-  gecerlilikTarihi.setHours(23, 59, 59, 999); // Gün sonuna ayarla
+  gecerlilikTarihi.setHours(23, 59, 59, 999);
 
   const payload: CreateTeklifPayload = {
     musteriId: teklif.value.musteriId!,
     teklifTarihi: new Date(teklif.value.teklifTarihi!).toISOString(),
     gecerlilikTarihi: gecerlilikTarihi.toISOString(),
+    currencyId: teklif.value.currencyId!,
     teklifSatirlari: teklif.value.teklifSatirlari!.map(s => ({
       urunId: s.urunId,
       aciklama: s.aciklama,
@@ -175,31 +200,31 @@ async function handleCreate() {
     })),
   };
   await TeklifService.create(payload);
+  notifier.success('Teklif başarıyla oluşturuldu.');
 }
 
 async function handleUpdate() {
   const gecerlilikTarihi = new Date(teklif.value.gecerlilikTarihi!);
-  gecerlilikTarihi.setHours(23, 59, 59, 999); // Gün sonuna ayarla
+  gecerlilikTarihi.setHours(23, 59, 59, 999);
 
   const payload: UpdateTeklifPayload = {
     musteriId: teklif.value.musteriId!,
     teklifTarihi: new Date(teklif.value.teklifTarihi!).toISOString(),
     gecerlilikTarihi: gecerlilikTarihi.toISOString(),
-    durum: Number(teklif.value.durum), // String yerine sayısal değeri gönder
+    currencyId: teklif.value.currencyId!,
+    durum: Number(teklif.value.durum),
     isActive: teklif.value.isActive!,
     teklifSatirlari: teklif.value.teklifSatirlari!.map(s => ({
       id: s.id.startsWith('new_') ? undefined : s.id,
       urunId: s.urunId,
       aciklama: s.aciklama,
-      // Değerin sayı olduğundan emin ol, değilse varsayılan bir değer ata.
-      // Bu, backend'de model bağlama hatasını (400 Bad Request) önler.
       miktar: parseFloat(String(s.miktar)) || 1,
       birimFiyat: parseFloat(String(s.birimFiyat)) || 0,
     })),
   };
   
-  console.log('Gönderilen Payload:', JSON.stringify(payload, null, 2));
   await TeklifService.update(quoteId.value!, payload);
+  notifier.success('Teklif başarıyla güncellendi.');
 }
 
 </script>
@@ -243,6 +268,15 @@ async function handleUpdate() {
                 type="date"
                 required
               ></v-text-field>
+            </v-col>
+             <v-col cols="12" md="2">
+              <v-select
+                v-model="teklif.currencyId"
+                :items="currencies"
+                item-title="code"
+                item-value="id"
+                label="Para Birimi"
+              ></v-select>
             </v-col>
             <v-col v-if="isEditMode" cols="12" md="2">
               <v-select
@@ -294,10 +328,10 @@ async function handleUpdate() {
               <v-text-field v-model.number="item.miktar" type="number" min="1" dense hide-details></v-text-field>
             </template>
             <template v-slot:item.birimFiyat="{ item }">
-              <v-text-field v-model.number="item.birimFiyat" type="number" min="0" dense hide-details prefix="₺"></v-text-field>
+              <v-text-field v-model.number="item.birimFiyat" type="number" min="0" dense hide-details :prefix="selectedCurrencyCode"></v-text-field>
             </template>
             <template v-slot:item.toplam="{ item }">
-              <span>{{ formatCurrency(item.toplam) }}</span>
+              <span>{{ formatCurrency(item.toplam, selectedCurrencyCode) }}</span>
             </template>
             <template v-slot:item.actions="{ item }">
               <v-btn icon="mdi-delete" variant="text" color="error" size="small" @click="removeSatir(item)"></v-btn>
@@ -307,7 +341,7 @@ async function handleUpdate() {
           <!-- Toplam Tutar -->
           <v-row class="mt-4">
             <v-col class="d-flex justify-end">
-              <div class="text-h5">Toplam Tutar: {{ formatCurrency(toplamTutar) }}</div>
+              <div class="text-h5">Toplam Tutar: {{ formatCurrency(toplamTutar, selectedCurrencyCode) }}</div>
             </v-col>
           </v-row>
 

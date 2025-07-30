@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialSchema : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -55,8 +57,7 @@ namespace Infrastructure.Migrations
                     Balance = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CompanyId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -67,11 +68,6 @@ namespace Infrastructure.Migrations
                         principalTable: "Companies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Customers_Companies_CompanyId1",
-                        column: x => x.CompanyId1,
-                        principalTable: "Companies",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -159,15 +155,20 @@ namespace Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.InsertData(
+                table: "Currencies",
+                columns: new[] { "Id", "Code", "IsActive", "Name", "Symbol" },
+                values: new object[,]
+                {
+                    { 1, "TRY", true, "Türk Lirası", "₺" },
+                    { 2, "USD", true, "Amerikan Doları", "$" },
+                    { 3, "EUR", true, "Euro", "€" }
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Customers_CompanyId",
                 table: "Customers",
                 column: "CompanyId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Customers_CompanyId1",
-                table: "Customers",
-                column: "CompanyId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Customers_Email",

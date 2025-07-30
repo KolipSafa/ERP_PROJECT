@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Core.Domain.Entities
 {
@@ -12,5 +13,9 @@ namespace Core.Domain.Entities
         public string Code { get; set; } = string.Empty; // Örn: TRY
         public string Symbol { get; set; } = string.Empty; // Örn: ₺
         public bool IsActive { get; set; } = true;
+
+        // Navigation properties
+        public ICollection<Product> Products { get; set; } = new List<Product>();
+        public ICollection<Teklif> Teklifler { get; set; } = new List<Teklif>();
     }
 }

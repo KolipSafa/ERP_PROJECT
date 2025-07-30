@@ -65,7 +65,9 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<Customer?> GetByIdAsync(Guid id)
         {
-            return await _context.Customers.FirstOrDefaultAsync(c => c.Id == id);
+            return await _context.Customers
+                .Include(c => c.Company) // Company ilişkisini dahil et
+                .FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public void Add(Customer customer)

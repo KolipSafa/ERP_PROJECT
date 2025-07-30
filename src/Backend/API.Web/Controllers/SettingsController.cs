@@ -1,7 +1,11 @@
+using Application.Features.Settings.Companies.Commands;
+using Application.Features.Settings.Companies.Queries;
 using Application.Features.Settings.Currencies.Commands;
 using Application.Features.Settings.Currencies.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 
 namespace API.Web.Controllers
 {
@@ -33,54 +37,56 @@ namespace API.Web.Controllers
         }
 
         [HttpPut("currencies/{id}")]
-        public async Task<IActionResult> UpdateCurrency(int id, [FromBody] object currencyDto)
+        public async Task<IActionResult> UpdateCurrency(int id, [FromBody] UpdateCurrencyCommand command)
         {
-            // TODO: UpdateCurrencyCommand'ı implement et
-            await Task.CompletedTask;
-            return Ok($"Para birimi {id} güncellenecek.");
+            if (id != command.Id)
+            {
+                return BadRequest("URL'deki ID ile komuttaki ID uyuşmuyor.");
+            }
+            var updatedCurrency = await _mediator.Send(command);
+            return Ok(updatedCurrency);
         }
 
         [HttpDelete("currencies/{id}")]
         public async Task<IActionResult> DeleteCurrency(int id)
         {
-            // TODO: DeleteCurrencyCommand'ı implement et
-            await Task.CompletedTask;
-            return Ok($"Para birimi {id} silinecek (soft delete).");
+            await _mediator.Send(new DeleteCurrencyCommand(id));
+            return NoContent();
         }
-
 
         // --- Firma (Company) Endpoint'leri ---
 
         [HttpGet("companies")]
         public async Task<IActionResult> GetCompanies()
         {
-            // TODO: GetCompaniesQuery'i implement et
-            await Task.CompletedTask;
-            return Ok("Firmalar listelenecek.");
+            var companies = await _mediator.Send(new GetCompaniesQuery());
+            return Ok(companies);
         }
 
         [HttpPost("companies")]
-        public async Task<IActionResult> CreateCompany([FromBody] object companyDto)
+        public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyCommand command)
         {
-            // TODO: CreateCompanyCommand'ı implement et
-            await Task.CompletedTask;
-            return Ok("Firma oluşturulacak.");
+            var createdCompany = await _mediator.Send(command);
+            // Şimdilik GetCompanies'e yönlendiriyoruz, GetCompanyById implemente edilince o kullanılabilir.
+            return CreatedAtAction(nameof(GetCompanies), new { id = createdCompany.Id }, createdCompany);
         }
 
         [HttpPut("companies/{id}")]
-        public async Task<IActionResult> UpdateCompany(Guid id, [FromBody] object companyDto)
+        public async Task<IActionResult> UpdateCompany(Guid id, [FromBody] UpdateCompanyCommand command)
         {
-            // TODO: UpdateCompanyCommand'ı implement et
-            await Task.CompletedTask;
-            return Ok($"Firma {id} güncellenecek.");
+            if (id != command.Id)
+            {
+                return BadRequest("URL'deki ID ile komuttaki ID uyuşmuyor.");
+            }
+            var updatedCompany = await _mediator.Send(command);
+            return Ok(updatedCompany);
         }
 
         [HttpDelete("companies/{id}")]
         public async Task<IActionResult> DeleteCompany(Guid id)
         {
-            // TODO: DeleteCompanyCommand'ı implement et
-            await Task.CompletedTask;
-            return Ok($"Firma {id} silinecek (soft delete).");
+            await _mediator.Send(new DeleteCompanyCommand(id));
+            return NoContent();
         }
     }
 }

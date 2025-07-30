@@ -112,9 +112,6 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("CompanyId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -141,8 +138,6 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("CompanyId1");
 
                     b.HasIndex("Email")
                         .IsUnique()
@@ -265,14 +260,10 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Domain.Entities.Customer", b =>
                 {
                     b.HasOne("Core.Domain.Entities.Company", "Company")
-                        .WithMany()
+                        .WithMany("Customers")
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("Core.Domain.Entities.Company", null)
-                        .WithMany("Customers")
-                        .HasForeignKey("CompanyId1");
 
                     b.Navigation("Company");
                 });
@@ -280,7 +271,7 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Domain.Entities.Product", b =>
                 {
                     b.HasOne("Core.Domain.Entities.Currency", "Currency")
-                        .WithMany()
+                        .WithMany("Products")
                         .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -291,7 +282,7 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Domain.Entities.Teklif", b =>
                 {
                     b.HasOne("Core.Domain.Entities.Currency", "Currency")
-                        .WithMany()
+                        .WithMany("Teklifler")
                         .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -329,6 +320,13 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Domain.Entities.Company", b =>
                 {
                     b.Navigation("Customers");
+                });
+
+            modelBuilder.Entity("Core.Domain.Entities.Currency", b =>
+                {
+                    b.Navigation("Products");
+
+                    b.Navigation("Teklifler");
                 });
 
             modelBuilder.Entity("Core.Domain.Entities.Teklif", b =>

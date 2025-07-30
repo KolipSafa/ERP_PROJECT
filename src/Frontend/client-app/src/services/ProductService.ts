@@ -8,8 +8,10 @@ export interface ProductDto {
   name: string;
   description?: string;
   price: number;
+  currencyId: number;
+  currencyCode?: string;
   stockQuantity: number;
-  sku: string; // SKU'yu backend oluşturup döndüreceği için burada kalmalı.
+  sku: string;
   isActive: boolean;
 }
 
@@ -23,11 +25,17 @@ export interface ProductFilterParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-// Create işlemi için gönderilecek veri tipi. SKU alanı çıkarıldı.
-export type CreateProductPayload = Omit<ProductDto, 'id' | 'isActive' | 'sku'>;
+// Create işlemi için gönderilecek veri tipi.
+export interface CreateProductPayload {
+  name: string;
+  description?: string;
+  price: number;
+  stockQuantity: number;
+  currencyId: number;
+}
 
 // Update işlemi için gönderilecek veri tipi. ID hariç tüm alanlar opsiyonel.
-export type UpdateProductPayload = Partial<Omit<ProductDto, 'id'>>;
+export type UpdateProductPayload = Partial<Omit<ProductDto, 'id' | 'sku' | 'currencyCode'>>;
 
 
 class ProductService {

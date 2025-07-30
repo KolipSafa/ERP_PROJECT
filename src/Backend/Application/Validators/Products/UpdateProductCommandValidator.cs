@@ -19,6 +19,10 @@ namespace Application.Validators.Products
             ValidatePrice();
             ValidateStock();
 
+            RuleFor(p => p.CurrencyId)
+                .NotEmpty().WithMessage("Para birimi boş olamaz.")
+                .When(p => p.CurrencyId.HasValue);
+
             RuleFor(p => p.SKU)
                 .NotEmpty().WithMessage("SKU boş olamaz.")
                 .MustAsync(BeUniqueSkuForUpdate).WithMessage("Bu SKU zaten başka bir ürüne ait.")

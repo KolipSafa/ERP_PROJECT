@@ -45,7 +45,7 @@ export type CreateCustomerPayload = Omit<CustomerDto, 'id' | 'fullName' | 'isAct
  * sadece değişen alanlar gönderilir.
  * `Omit` ile 'id' ve 'fullName' gibi asla güncellenmemesi gereken alanlar çıkarılmıştır.
  */
-export type UpdateCustomerPayload = Partial<Omit<CustomerDto, 'id' | 'fullName'>>;
+export type UpdateCustomerPayload = Partial<Omit<CustomerDto, 'id' | 'fullName' | 'companyName'>>;
 
 /**
  * Müşteri verileriyle ilgili tüm API iletişimini merkezi bir yerden yöneten servis sınıfı.

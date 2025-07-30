@@ -1,33 +1,32 @@
-using Application.Common.Exceptions;
-using Core.Domain.Entities;
 using Core.Domain.Interfaces;
+using FluentValidation;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Application.Features.Settings.Companies.Commands
+namespace Application.Features.Settings.Companies.Commands;
+
+public class DeleteCompanyCommandHandler : IRequestHandler<DeleteCompanyCommand>
 {
-    public class DeleteCompanyCommandHandler : IRequestHandler<DeleteCompanyCommand, Unit>
+    private readonly IUnitOfWork _unitOfWork;
+
+    public DeleteCompanyCommandHandler(IUnitOfWork unitOfWork)
     {
-        private readonly IUnitOfWork _unitOfWork;
+        _unitOfWork = unitOfWork;
+    }
 
-        public DeleteCompanyCommandHandler(IUnitOfWork unitOfWork)
+    public async Task Handle(DeleteCompanyCommand request, CancellationToken cancellationToken)
+    {
+        var companyToDelete = await _unitOfWork.CompanyRepository.GetByIdAsync(request.Id);
+        if (companyToDelete == null)
         {
-            _unitOfWork = unitOfWork;
+            // Proje planına göre, bulunamayan kaynaklar için NotFoundException fırlatmak daha doğru olabilir.
+            // Şimdilik ValidationException ile devam ediyorum, ancak bu refactor edilebilir.
+            throw new ValidationException($"ID'si {request.Id} olan firma bulunamadı.");
         }
 
-        public async Task<Unit> Handle(DeleteCompanyCommand request, CancellationToken cancellationToken)
-        {
-            var company = await _unitOfWork.CompanyRepository.GetByIdAsync(request.Id);
-
-            if (company == null)
-            {
-                throw new NotFoundException(nameof(Company), request.Id);
-            }
-
-            // Soft delete mantığı Repository katmanında uygulanmıştı.
-            _unitOfWork.CompanyRepository.Delete(company);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return Unit.Value;
-        }
+        _unitOfWork.CompanyRepository.Delete(companyToDelete); // Bu soft delete yapacak
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
