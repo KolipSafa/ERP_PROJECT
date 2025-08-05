@@ -28,7 +28,7 @@ export interface TeklifDto {
   toplamTutar: number;
   currencyId: number;
   currencyCode?: string;
-  durum: string; // Enum'ın string hali (örn: "Hazırlanıyor")
+  durum: string | number; // Enum'ın string hali veya sayısal değeri
   isActive: boolean;
   teklifSatirlari: TeklifSatiriDto[];
 }

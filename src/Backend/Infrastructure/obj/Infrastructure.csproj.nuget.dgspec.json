@@ -4,14 +4,14 @@
     "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Infrastructure\\Infrastructure.csproj": {}
   },
   "projects": {
-    "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application\\Application.csproj": {
+    "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application.Interfaces\\Application.Interfaces.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application\\Application.csproj",
-        "projectName": "Application",
-        "projectPath": "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application\\Application.csproj",
+        "projectUniqueName": "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application.Interfaces\\Application.Interfaces.csproj",
+        "projectName": "Application.Interfaces",
+        "projectPath": "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application.Interfaces\\Application.Interfaces.csproj",
         "packagesPath": "C:\\Users\\safak\\.nuget\\packages\\",
-        "outputPath": "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application\\obj\\",
+        "outputPath": "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application.Interfaces\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\safak\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -27,11 +27,7 @@
         "frameworks": {
           "net9.0": {
             "targetAlias": "net9.0",
-            "projectReferences": {
-              "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Core.Domain\\Core.Domain.csproj": {
-                "projectPath": "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Core.Domain\\Core.Domain.csproj"
-              }
-            }
+            "projectReferences": {}
           }
         },
         "warningProperties": {
@@ -50,17 +46,9 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
-            "AutoMapper.Extensions.Microsoft.DependencyInjection": {
+            "gotrue-csharp": {
               "target": "Package",
-              "version": "[12.0.1, )"
-            },
-            "FluentValidation.AspNetCore": {
-              "target": "Package",
-              "version": "[11.3.1, )"
-            },
-            "MediatR": {
-              "target": "Package",
-              "version": "[12.3.0, )"
+              "version": "[4.2.7, )"
             }
           },
           "imports": [
@@ -168,8 +156,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application\\Application.csproj": {
-                "projectPath": "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application\\Application.csproj"
+              "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application.Interfaces\\Application.Interfaces.csproj": {
+                "projectPath": "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Application.Interfaces\\Application.Interfaces.csproj"
               },
               "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Core.Domain\\Core.Domain.csproj": {
                 "projectPath": "D:\\yazilim_projelerim\\ERP_PROJECT\\src\\Backend\\Core.Domain\\Core.Domain.csproj"
@@ -193,15 +181,31 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
-            "Microsoft.EntityFrameworkCore.SqlServer": {
+            "Hangfire.AspNetCore": {
               "target": "Package",
-              "version": "[9.0.7, )"
+              "version": "[1.8.12, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.0-rc.2.24474.1, )"
             },
             "Microsoft.EntityFrameworkCore.Tools": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.7, )"
+              "version": "[9.0.0-rc.2.24474.1, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[9.0.0-rc.2, )"
+            },
+            "Serilog.AspNetCore": {
+              "target": "Package",
+              "version": "[8.0.1, )"
+            },
+            "supabase-csharp": {
+              "target": "Package",
+              "version": "[0.16.2, )"
             }
           },
           "imports": [

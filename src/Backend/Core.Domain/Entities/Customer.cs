@@ -49,6 +49,14 @@ namespace Core.Domain.Entities
         // Nesne yaratıldığı anda doğru durumuyla başlar.
         public bool IsActive { get; set; } = true;
 
+        // Bu müşteri için bir kullanıcı hesabı oluşturulduysa, o hesabın ID'sini burada tutacağız.
+        // Henüz davet edilmemiş veya hesabını aktive etmemiş müşteriler için bu alan NULL olacaktır.
+        // Bu, Infrastructure katmanındaki ApplicationUser'a bir referanstır.
+        // Normalde Domain katmanı Infrastructure'a bağımlı olmaz, ancak bu property
+        // bir veritabanı ilişkisi için gereklidir ve EF Core tarafından yönetilecektir.
+        // Asıl entity referansı (navigation property) bu dosyada yer almayacak.
+        public Guid? ApplicationUserId { get; set; }
+
         // Neden "DateTime" ve "DateTime?"?
         // Her kaydın ne zaman oluşturulduğunu bilmek önemlidir. Bu yüzden 'CreatedDate' null olamaz.
         // Ancak 'UpdatedDate', kayıt ilk oluşturulduğunda 'null' olacaktır. Sadece bir güncelleme işlemi

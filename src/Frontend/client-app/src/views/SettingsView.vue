@@ -14,7 +14,7 @@
             <template v-slot:prepend>
               <v-icon :icon="item.icon"></v-icon>
             </template>
-            <v-list-item-title v-text="item.text"></v-list-item-title>
+            <v-list-item-title>{{ item.text }}</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-card>
@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, type Component } from 'vue';
 import CompanySettings from '@/components/settings/CompanySettings.vue';
 import CurrencySettings from '@/components/settings/CurrencySettings.vue';
 
@@ -42,7 +42,7 @@ const items = [
   { text: 'Para Birimleri', icon: 'mdi-cash-multiple', component: 'CurrencySettings' },
 ];
 
-const components: { [key: string]: any } = {
+const components: { [key: string]: Component } = {
   CompanySettings,
   CurrencySettings,
 };

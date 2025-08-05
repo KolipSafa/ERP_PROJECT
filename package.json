@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "vue3-toastify": "^0.2.8"
+  },
+  "devDependencies": {
+    "supabase": "^2.33.9"
+  }
+}

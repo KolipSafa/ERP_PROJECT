@@ -1,9 +1,10 @@
-// D:\yazilim_projelerim\ERP_PROJECT\src\Backend\Application\Features\Customers\Queries\GetCustomerByIdQuery.cs
-
 using Application.DTOs;
 using AutoMapper;
 using Core.Domain.Interfaces;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Application.Features.Customers.Queries
 {
@@ -29,7 +30,13 @@ namespace Application.Features.Customers.Queries
                 return null;
             }
 
-            return _mapper.Map<CustomerDto>(customer);
+            var customerDto = _mapper.Map<CustomerDto>(customer);
+
+            // TODO: Müşterinin Supabase'deki hesap durumunu (EmailConfirmed)
+            // Supabase Admin API'si üzerinden sorgulayarak `IsAccountActive` alanını doldur.
+            customerDto.IsAccountActive = false; // Şimdilik varsayılan olarak false ayarlıyoruz.
+
+            return customerDto;
         }
     }
 }

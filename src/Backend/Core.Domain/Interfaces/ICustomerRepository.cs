@@ -13,6 +13,7 @@ namespace Core.Domain.Interfaces
             string? searchTerm = null,
             string? sortBy = null,
             bool isDescending = false);
+        Task<Customer?> GetByEmailAsync(string? email);
         void Add(Customer customer);
         void Update(Customer customer);
         void Delete(Customer customer);

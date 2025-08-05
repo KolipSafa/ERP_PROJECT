@@ -1,23 +1,26 @@
-import axios from 'axios';
+import apiClient from './axios';
+import { supabase } from '@/lib/supabaseClient'; // Supabase client'ı import et
 
-const API_URL = 'https://localhost:7277/api/customers'; // Müşteri API adresi
+const API_URL = '/customers'; // Müşteri API adresi
 
 /**
  * Backend'deki CustomerDto.cs ile %100 uyumlu, doğrulanmış TypeScript interface'i.
  * Bu, frontend ve backend arasındaki veri sözleşmesini tanımlar.
  */
 export interface CustomerDto {
-  id: string; // Guid, frontend'de string olarak ele alınır
+  id: string;
   firstName: string;
   lastName: string;
   fullName: string;
+  companyId?: string; // Eklendi
   companyName?: string;
-  taxNumber?: string; // Backend'den geldiği için eklendi
-  address?: string;   // Backend'den geldiği için eklendi
+  taxNumber?: string;
+  address?: string;
   phoneNumber?: string;
   email?: string;
   balance: number;
   isActive: boolean;
+  isAccountActive: boolean; // Eklendi
 }
 
 /**
@@ -37,7 +40,18 @@ export interface CustomerFilterParams {
  * ('id', 'fullName', 'isActive', 'balance') alanlar bu tipten çıkarılmıştır.
  * Bu, frontend'in yanlışlıkla bu alanları göndermesini engelleyen bir güvenlik katmanıdır.
  */
-export type CreateCustomerPayload = Omit<CustomerDto, 'id' | 'fullName' | 'isActive' | 'balance'>;
+/**
+ * Yeni bir müşteri oluştururken gönderilecek veri yapısı (payload).
+ * Backend'deki `CreateCustomerCommand` ile eşleşir.
+ */
+export interface CreateCustomerPayload {
+  applicationUserId: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  companyId?: string;
+  phoneNumber?: string;
+}
 
 /**
  * Bir müşteriyi güncellerken gönderilecek veri yapısı (payload).
@@ -48,17 +62,46 @@ export type CreateCustomerPayload = Omit<CustomerDto, 'id' | 'fullName' | 'isAct
 export type UpdateCustomerPayload = Partial<Omit<CustomerDto, 'id' | 'fullName' | 'companyName'>>;
 
 /**
+ * Bir müşteriyi sisteme davet ederken Edge Function'a gönderilecek veri yapısı.
+ */
+export interface InviteCustomerPayload {
+  email: string;
+  data: {
+    first_name: string;
+    last_name: string;
+    company_id?: string;
+  }
+}
+
+/**
  * Müşteri verileriyle ilgili tüm API iletişimini merkezi bir yerden yöneten servis sınıfı.
  * Bu, sorumlulukların ayrılması, kod tekrarının önlenmesi ve bakım kolaylığı sağlar.
  */
 class CustomerService {
+
+  /**
+   * Bir müşteriyi sisteme davet etmek için 'invite-user' Edge Function'ını çağırır.
+   * @param payload InviteCustomerPayload tipinde davet verisi
+   * @returns Edge Function'dan dönen sonucu içeren bir Promise
+   */
+  async inviteCustomer(payload: InviteCustomerPayload) {
+    const { data, error } = await supabase.functions.invoke('invite-user', {
+      body: { email: payload.email, data: payload.data },
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+    return data;
+  }
+
   /**
    * Filtre parametrelerine göre müşteri listesini getirir.
    * @param params CustomerFilterParams objesi
    * @returns CustomerDto dizisi içeren bir Promise
    */
   getAll(params: CustomerFilterParams = {}) {
-    return axios.get<CustomerDto[]>(API_URL, { params });
+    return apiClient.get<CustomerDto[]>(API_URL, { params });
   }
 
   /**
@@ -67,16 +110,16 @@ class CustomerService {
    * @returns Tek bir CustomerDto içeren bir Promise
    */
   getById(id: string) {
-    return axios.get<CustomerDto>(`${API_URL}/${id}`);
+    return apiClient.get<CustomerDto>(`${API_URL}/${id}`);
   }
 
   /**
-   * Yeni bir müşteri oluşturur.
+   * Yeni bir müşteri oluşturur. (Bu metot artık sadece davet kabul edildikten sonra kullanılacak)
    * @param customer CreateCustomerPayload tipinde müşteri verisi
    * @returns Oluşturulan yeni CustomerDto'yu içeren bir Promise
    */
   create(customer: CreateCustomerPayload) {
-    return axios.post<CustomerDto>(API_URL, customer);
+    return apiClient.post<CustomerDto>(API_URL, customer);
   }
 
   /**
@@ -86,7 +129,7 @@ class CustomerService {
    * @returns Güncellenmiş CustomerDto'yu içeren bir Promise
    */
   update(id: string, customer: UpdateCustomerPayload) {
-    return axios.patch<CustomerDto>(`${API_URL}/${id}`, customer);
+    return apiClient.patch<CustomerDto>(`${API_URL}/${id}`, customer);
   }
 
   /**
@@ -95,7 +138,7 @@ class CustomerService {
    * @returns Başarılı olursa 204 No Content döner.
    */
   archive(id: string) {
-    return axios.delete(`${API_URL}/${id}`);
+    return apiClient.delete(`${API_URL}/${id}`);
   }
 
   /**

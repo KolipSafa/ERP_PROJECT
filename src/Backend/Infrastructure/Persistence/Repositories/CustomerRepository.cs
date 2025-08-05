@@ -70,6 +70,16 @@ namespace Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
+        public async Task<Customer?> GetByEmailAsync(string? email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                return null;
+            }
+            return await _context.Customers
+                .FirstOrDefaultAsync(c => c.Email != null && c.Email.ToLower() == email.ToLower());
+        }
+
         public void Add(Customer customer)
         {
             _context.Customers.Add(customer);

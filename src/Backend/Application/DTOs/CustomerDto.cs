@@ -14,5 +14,6 @@ namespace Application.DTOs
         public string? Email { get; set; }
         public decimal Balance { get; set; }
         public bool IsActive { get; set; }
+        public bool IsAccountActive { get; set; } // Eklendi
     }
 }

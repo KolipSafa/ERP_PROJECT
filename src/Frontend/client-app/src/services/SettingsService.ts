@@ -1,42 +1,42 @@
-import axios from 'axios';
+import apiClient from './axios';
 import type { CompanyDto } from './dtos/CompanyDto';
 import type { CurrencyDto } from './dtos/CurrencyDto';
 
-const API_URL = 'https://localhost:7277/api/Settings';
+const API_URL = '/Settings';
 
 class SettingsService {
   // Company methods
   getCompanies() {
-    return axios.get<CompanyDto[]>(`${API_URL}/companies`);
+    return apiClient.get<CompanyDto[]>(`${API_URL}/companies`);
   }
 
   createCompany(company: Omit<CompanyDto, 'id' | 'isActive'>) {
-    return axios.post<CompanyDto>(`${API_URL}/companies`, company);
+    return apiClient.post<CompanyDto>(`${API_URL}/companies`, company);
   }
 
   updateCompany(id: string, company: Partial<CompanyDto>) {
-    return axios.put<CompanyDto>(`${API_URL}/companies/${id}`, company);
+    return apiClient.put<CompanyDto>(`${API_URL}/companies/${id}`, company);
   }
 
   deleteCompany(id: string) {
-    return axios.delete(`${API_URL}/companies/${id}`);
+    return apiClient.delete(`${API_URL}/companies/${id}`);
   }
 
   // Currency methods
   getCurrencies() {
-    return axios.get<CurrencyDto[]>(`${API_URL}/currencies`);
+    return apiClient.get<CurrencyDto[]>(`${API_URL}/currencies`);
   }
 
   createCurrency(currency: Omit<CurrencyDto, 'id' | 'isActive'>) {
-    return axios.post<CurrencyDto>(`${API_URL}/currencies`, currency);
+    return apiClient.post<CurrencyDto>(`${API_URL}/currencies`, currency);
   }
 
   updateCurrency(id: number, currency: Partial<CurrencyDto>) {
-    return axios.put<CurrencyDto>(`${API_URL}/currencies/${id}`, currency);
+    return apiClient.put<CurrencyDto>(`${API_URL}/currencies/${id}`, currency);
   }
 
   deleteCurrency(id: number) {
-    return axios.delete(`${API_URL}/currencies/${id}`);
+    return apiClient.delete(`${API_URL}/currencies/${id}`);
   }
 }
 

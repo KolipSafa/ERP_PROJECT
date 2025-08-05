@@ -1,5 +1,3 @@
-// D:\yazilim_projelerim\ERP_PROJECT\src\Backend\Application\Features\Customers\Queries\GetAllCustomersQuery.cs
-
 using Application.DTOs;
 using AutoMapper;
 using Core.Domain.Interfaces;
@@ -10,7 +8,6 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Customers.Queries
 {
-    // Query'miz artık filtreleme parametrelerini taşıyor.
     public record GetAllCustomersQuery(
         bool IncludeInactive,
         string? SearchTerm,
@@ -30,14 +27,23 @@ namespace Application.Features.Customers.Queries
 
         public async Task<IEnumerable<CustomerDto>> Handle(GetAllCustomersQuery request, CancellationToken cancellationToken)
         {
-            // Gelen parametreleri doğrudan repository metoduna iletiyoruz.
             var customers = await _unitOfWork.CustomerRepository.GetAllAsync(
                 request.IncludeInactive,
                 request.SearchTerm,
                 request.SortBy,
                 request.IsDescending);
+
+            var customerDtos = _mapper.Map<List<CustomerDto>>(customers);
+
+            // TODO: Müşterilerin Supabase'deki hesap durumunu (EmailConfirmed)
+            // Supabase Admin API'si üzerinden sorgulayarak `IsAccountActive` alanını doldur.
+            // Bu işlem, birden fazla müşteri için toplu bir sorgu ile yapılmalıdır.
+            foreach (var dto in customerDtos)
+            {
+                dto.IsAccountActive = false; // Şimdilik varsayılan olarak false ayarlıyoruz.
+            }
             
-            return _mapper.Map<IEnumerable<CustomerDto>>(customers);
+            return customerDtos;
         }
     }
 }

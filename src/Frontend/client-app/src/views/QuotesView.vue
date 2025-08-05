@@ -4,9 +4,11 @@ import { useRouter } from 'vue-router';
 import TeklifService, { type TeklifFilterParams } from '@/services/TeklifService';
 import CustomerService, { type CustomerDto } from '@/services/CustomerService';
 import type { TeklifDto, UpdateTeklifPayload } from '@/services/dtos/TeklifDtos';
+import { useNotifier } from '@/composables/useNotifier';
 import debounce from 'lodash.debounce';
 
 const router = useRouter();
+const notifier = useNotifier();
 const teklifler = ref<TeklifDto[]>([]);
 const customers = ref<CustomerDto[]>([]);
 const loading = ref(true);
@@ -77,6 +79,7 @@ const fetchTeklifler = async () => {
     teklifler.value = response.data;
   } catch (error) {
     console.error('Teklifler getirilirken bir hata oluştu:', error);
+    notifier.error('Teklifler getirilirken bir hata oluştu.');
   } finally {
     loading.value = false;
   }
@@ -88,12 +91,21 @@ const fetchCustomers = async () => {
     customers.value = response.data;
   } catch (error) {
     console.error('Müşteriler getirilirken hata:', error);
+    notifier.error('Müşteriler getirilirken bir hata oluştu.', { autoClose: 4000 });
   }
 };
 
 onMounted(() => {
+  const notification = history.state.notification as { type: 'success' | 'error', message: string, duration?: number } | null;
+  if (notification) {
+    if (notification.type === 'success') {
+      notifier.success(notification.message, { autoClose: notification.duration || 4000 });
+    } else if (notification.type === 'error') {
+      notifier.error(notification.message, { autoClose: notification.duration || 4000 });
+    }
+    history.replaceState({ ...history.state, notification: null }, '');
+  }
   fetchTeklifler();
-  fetchCustomers();
 });
 
 watch(filters, debounce(fetchTeklifler, 400), { deep: true });
@@ -118,22 +130,36 @@ const updateStatus = async (teklifToUpdate: TeklifDto, yeniDurumValue: number) =
     };
 
     await TeklifService.update(teklifToUpdate.id, payload);
+    notifier.success(`'${teklifToUpdate.teklifNumarasi}' numaralı teklifin durumu güncellendi.`, { autoClose: 6000 });
     fetchTeklifler(); // Listeyi yenile
   } catch (error) {
+    notifier.error('Durum güncellenirken bir hata oluştu.', { autoClose: 4000 });
     console.error('Durum güncellenirken hata:', error);
   }
 };
 
 const archiveTeklif = async () => {
   if (!selectedTeklif.value) return;
-  await TeklifService.archive(selectedTeklif.value.id);
-  fetchTeklifler(); // Listeyi yenile
+  try {
+    await TeklifService.archive(selectedTeklif.value.id);
+    notifier.success(`'${selectedTeklif.value.teklifNumarasi}' başarıyla arşivlendi.`, { autoClose: 4000 });
+    fetchTeklifler(); // Listeyi yenile
+  } catch (error) {
+    notifier.error('Teklif arşivlenirken bir hata oluştu.', { autoClose: 4000 });
+    console.error(error);
+  }
 };
 
 const restoreTeklif = async () => {
   if (!selectedTeklif.value) return;
-  await TeklifService.restore(selectedTeklif.value.id);
-  fetchTeklifler(); // Listeyi yenile
+  try {
+    await TeklifService.restore(selectedTeklif.value.id);
+    notifier.success(`'${selectedTeklif.value.teklifNumarasi}' başarıyla geri yüklendi.`, { autoClose: 4000 });
+    fetchTeklifler(); // Listeyi yenile
+  } catch (error) {
+    notifier.error('Teklif geri yüklenirken bir hata oluştu.', { autoClose: 4000 });
+    console.error(error);
+  }
 };
 
 const formatDate = (dateString: string) => {
@@ -142,8 +168,8 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString('tr-TR');
 };
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(value);
+const formatCurrency = (value: number, currencyCode: string = 'TRY') => {
+  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: currencyCode }).format(value);
 };
 
 const getStatusColor = (status: string) => {
@@ -212,7 +238,7 @@ const getStatusColor = (status: string) => {
             <span>{{ formatCurrency(item.toplamTutar, item.currencyCode) }}</span>
           </template>
           <template v-slot:item.durum="{ item }">
-            <v-chip :color="getStatusColor(item.durum)" size="small">{{ item.durum }}</v-chip>
+            <v-chip :color="getStatusColor(String(item.durum))" size="small">{{ item.durum }}</v-chip>
           </template>
           <template v-slot:item.isActive="{ item }">
             <v-chip :color="item.isActive ? 'green' : 'red'" size="small">{{ item.isActive ? 'Aktif' : 'Pasif' }}</v-chip>

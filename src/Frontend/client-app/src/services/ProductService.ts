@@ -1,6 +1,6 @@
-import axios from 'axios';
+import apiClient from './axios';
 
-const API_URL = 'https://localhost:7277/api/products'; // Backend API adresimiz
+const API_URL = '/products'; // Backend API adresimiz
 
 // Backend'deki ProductDto'ya karşılık gelen bir interface tanımlayalım
 export interface ProductDto {
@@ -35,41 +35,41 @@ export interface CreateProductPayload {
 }
 
 // Update işlemi için gönderilecek veri tipi. ID hariç tüm alanlar opsiyonel.
-export type UpdateProductPayload = Partial<Omit<ProductDto, 'id' | 'sku' | 'currencyCode'>>;
+export type UpdateProductPayload = Partial<Omit<ProductDto, 'id' | 'currencyCode'>>;
 
 
 class ProductService {
   getAll(params: ProductFilterParams = {}) {
-    return axios.get<ProductDto[]>(API_URL, { params });
+    return apiClient.get<ProductDto[]>(API_URL, { params });
   }
 
   getById(id: number) {
-    return axios.get<ProductDto>(`${API_URL}/${id}`);
+    return apiClient.get<ProductDto>(`${API_URL}/${id}`);
   }
 
   create(product: CreateProductPayload) {
-    return axios.post<ProductDto>(API_URL, product);
+    return apiClient.post<ProductDto>(API_URL, product);
   }
 
   update(id: number, product: UpdateProductPayload) {
     // PUT'u PATCH olarak güncelliyoruz.
-    return axios.patch<ProductDto>(`${API_URL}/${id}`, product);
+    return apiClient.patch<ProductDto>(`${API_URL}/${id}`, product);
   }
 
   // Bir ürünü arşivleyen (soft delete) metot
   archive(id: number) {
-    return axios.delete(`${API_URL}/${id}`);
+    return apiClient.delete(`${API_URL}/${id}`);
   }
 
   // Bir ürünü geri yükleyen (tekrar aktif yapan) metot
   restore(id: number) {
     // Update endpoint'ini kullanarak sadece isActive durumunu güncelliyoruz
-    return axios.patch<ProductDto>(`${API_URL}/${id}`, { isActive: true });
+    return apiClient.patch<ProductDto>(`${API_URL}/${id}`, { isActive: true });
   }
 
   // Bir ürünü kalıcı olarak silen (hard delete) metot
   hardDelete(id: number) {
-    return axios.delete(`${API_URL}/hard/${id}`);
+    return apiClient.delete(`${API_URL}/hard/${id}`);
   }
 }
 

@@ -4,6 +4,114 @@ Bu belge, ERP projesi üzerinde yapılan günlük çalışmaları özetlemektedi
 
 ---
 
+## 5 Ağustos 2025 Salı
+
+Bugün, bir önceki gün tespit edilen ve müşteri aktivasyon akışını tamamen engelleyen kritik backend hatalarını çözmek için yoğun bir hata ayıklama ve yeniden yapılandırma (refactoring) çalışması yapıldı.
+
+### Supabase Admin Entegrasyonunun Yeniden İnşası
+- **Kök Neden Tespiti:** `supabase-csharp` kütüphanesinin `0.16.2` versiyonunda, yönetici (admin) fonksiyonlarına erişimle ilgili ciddi tutarsızlıklar ve eksik dokümantasyon olduğu tespit edildi. `AdminClient`, `UserAttributes` ve `_client.Auth.Admin` gibi nesnelerle yapılan sayısız deneme, kütüphanenin mevcut sürümünün kararlı bir yönetici arayüzü sunmadığını kanıtladı.
+- **Stratejik Değişiklik (API Odaklı Yaklaşım):** Kütüphane bağımlılığının yarattığı risk ve zaman kaybını ortadan kaldırmak için radikal bir karar alındı. `SupabaseAuthAdminService`, kütüphaneyi kullanmak yerine, doğrudan Supabase'in sunduğu **stabil ve iyi belgelenmiş REST API**'sine `HttpClient` ile istek atacak şekilde sıfırdan yeniden yazıldı.
+- **Güvenli ve Sağlam Implementasyon:**
+  - `Program.cs`, artık `supabase-csharp` client'ı yerine, bu yeni servis için bir `HttpClient` fabrikası kaydettirecek şekilde güncellendi.
+  - Yeni servis, `appsettings.json`'dan okuduğu `ServiceRoleKey`'i `Bearer` token olarak kullanarak Supabase'e güvenli ve yetkili istekler yapacak şekilde yapılandırıldı.
+  - Bu yeni mimari, projenin Supabase yönetici işlemlerini kütüphane versiyonlarından tamamen bağımsız hale getirerek geleceğe dönük büyük bir kararlılık sağladı.
+
+### Hata Ayıklama ve Son Düzeltmeler
+- **Yapılandırma Hatasının Giderilmesi:** Yeni `HttpClient` tabanlı servisin, `appsettings.json`'daki Supabase anahtarını yanlış bir isimle (`ServiceKey` yerine `ServiceRoleKey`) okumaya çalıştığı tespit edildi ve bu kritik yapılandırma hatası düzeltildi.
+- **Derleme Hatalarının Temizlenmesi:** `ISupabaseAuthAdminService` arayüzü ve bu arayüzü kullanan `CreateCustomerCommandHandler` gibi sınıflar, yeni `HttpClient` tabanlı servisin `async Task<User?>` gibi modern C# desenlerini kullanan metot imzalarıyla tam uyumlu hale getirildi. Bu süreçte eksik `using` ifadeleri ve yanlış tür bildirimlerinden kaynaklanan tüm derleme hataları giderildi.
+
+Günün sonunda, müşteri aktivasyon ve silme işlemlerinin altyapısı, kütüphane sorunlarından arındırılmış, test edilebilir ve son derece sağlam bir yapıya kavuşturulmuştur. Projenin backend'i şu anda bilinen hiçbir derleme hatası veya bug olmadan çalışır durumdadır.
+
+---
+
+## 4 Ağustos 2025 Pazartesi
+
+Bugün, müşteri yaşam döngüsünün kritik bir parçası olan **Müşteri Silme** işlevselliği üzerine odaklanıldı ve bu süreçte hem frontend hem de backend'de önemli geliştirmeler ve hata ayıklamaları yapıldı.
+
+### Müşteri Silme Akışının Geliştirilmesi
+- **Bütünsel Yaklaşım:** Bir müşterinin silinmesinin, sadece bizim veritabanımızdaki (`Customers` tablosu) kaydın pasif hale getirilmesi değil, aynı zamanda **Supabase Authentication**'daki ilgili kullanıcının da kalıcı olarak silinmesi gerektiği belirlendi. Bu, sistemde artık bir karşılığı olmayan "hayalet" kullanıcıların kalmasını önler.
+- **Backend Servisi Oluşturma (`ISupabaseAuthAdminService`):**
+  - Supabase üzerinde yönetici yetkileriyle (kullanıcı silme, rol atama vb.) işlem yapacak olan servis için `ISupabaseAuthAdminService` arayüzü oluşturuldu.
+  - Bu servisin ilk implementasyonu, `supabase-csharp` NuGet paketi kullanılarak `SupabaseAuthAdminService.cs` sınıfında gerçekleştirildi.
+- **İş Mantığı Entegrasyonu (`DeleteCustomerCommand`):**
+  - Müşteri silme komutu olan `DeleteCustomerCommandHandler`, artık `IUnitOfWork`'e ek olarak `ISupabaseAuthAdminService`'i de enjekte alacak şekilde güncellendi.
+  - İş akışı, önce Supabase'den kullanıcıyı silmeye çalışacak, bu işlem başarılı olsun veya olmasın, ardından yerel veritabanındaki müşteri kaydını pasif hale getirecek şekilde yeniden düzenlendi.
+- **Frontend Entegrasyonu (`CustomersView.vue`):**
+  - Müşteri listesi ekranına, "Arşivle" (`mdi-archive-arrow-down`) ve "Geri Yükle" (`mdi-restore`) ikon butonları eklendi.
+  - Bu butonlar, ilgili backend endpoint'lerini çağıran `CustomerService.ts` metotlarını tetikleyecek şekilde bağlandı.
+
+### Kritik Hata Ayıklama: `appsettings.json`
+- **Sorun Tespiti:** Geliştirme sırasında, backend'in Supabase'e bağlanamamasına neden olan `SocketException: Bilinen böyle bir ana bilgisayar yok` hatası alındı.
+- **Kök Neden:** Hataya, `appsettings.Development.json` dosyasının, hassas bilgileri (connection string, service role key) içermediği için `.gitignore`'da olmasının ve bu dosyanın yerel makinede yanlış veya eksik olmasının neden olduğu anlaşıldı.
+- **Çözüm ve Standardizasyon:**
+  - Projeye, doğru `appsettings.Development.json` yapısını gösteren bir `appsettings.Development.json.example` dosyası eklendi.
+  - Geliştirme ortamı için gerekli olan `ConnectionString`, `Supabase:Url` ve `Supabase:ServiceRoleKey` gibi tüm kritik yapılandırma anahtarları bu dosyada standartlaştırıldı ve doğru değerlerle dolduruldu. Bu, gelecekteki "benim makinemde çalışmıyor" sorunlarını önleyecektir.
+
+---
+
+## 1 Ağustos 2025 Cuma
+
+Bugün, hafta boyunca geliştirilen ve projenin en karmaşık iş akışlarından biri olan **güvenli müşteri davet ve aktivasyon** sürecinin son adımları tamamlandı ve uçtan uca test edildi.
+
+### Davet Akışının Tamamlanması
+- **Şifre Belirleme Sayfası (`SetPasswordView.vue`):**
+  - Davet linkiyle gelen kullanıcıların ilk şifrelerini oluşturacakları arayüz geliştirildi.
+  - Forma, girilen iki şifrenin eşleşmesi ve minimum uzunlukta olması gibi temel **doğrulama kuralları (validation rules)** eklendi.
+- **Hesap Aktivasyon Mantığı:**
+  - "Kaydet" butonuna basıldığında tetiklenen `savePassword` metodu, birden fazla adımdan oluşan bir zinciri yönetecek şekilde implemente edildi:
+    1.  Önce `AuthService.updateUserPassword` ile kullanıcının şifresi Supabase'de güncellenir.
+    2.  Ardından, `CustomerService.create` ile backend API'sine istek atılarak, Supabase'den alınan kullanıcı bilgileriyle (`user_id`, `email`, `isim` vb.) `Customers` tablosuna yeni bir kayıt oluşturulur.
+    3.  Son olarak, `AuthService.updateUserMetadata` ile Supabase'deki kullanıcının `app_metadata.status` alanı `'invited'`'dan `'active'`'e çevrilir.
+- **Yönlendirme Mantığı (`router/index.ts`):**
+  - Uygulamanın `router guard`'ı (`beforeEach`), `status`'u `'active'` olan bir kullanıcının artık `/set-password` sayfasına erişememesini ve doğrudan kendi paneline yönlendirilmesini sağlayacak şekilde güncellendi.
+
+### Uçtan Uca Test ve Hata Ayıklama
+- **Zamanlama (Race Condition) Sorunları:** Testler sırasında, `status` güncellendikten hemen sonra yönlendirmenin çalışmadığı tespit edildi. Sorunun, `onAuthStateChange` dinleyicisinin, reaktif state güncellemelerindeki zamanlama farkları nedeniyle doğru anda tetiklenmemesinden kaynaklandığı anlaşıldı. Bu sorun, yönlendirme mantığının daha sağlam koşullarla yeniden yazılmasıyla çözüldü.
+- **Veri Bütünlüğü:** Davet akışı sırasında `company_id` gibi kritik verilerin `user_metadata` aracılığıyla `SetPasswordView`'e kadar doğru bir şekilde taşındığı ve backend'e eksiksiz olarak iletildiği doğrulandı.
+
+---
+
+## 31 Temmuz 2025 Perşembe
+
+Bugün, müşteri davet akışının temelini oluşturan **rol ve durum yönetimi** üzerine odaklanıldı. Amaç, davet edilen bir kullanıcıyı, şifresini belirleyene kadar sistemde kısıtlı bir durumda tutmaktı.
+
+### `status: 'invited'` Mimarisi
+- **Strateji:** Bir önceki gün karşılaşılan `aud` (audience) claim sorununu aşmak için, Supabase'in `app_metadata` özelliği kullanılarak daha esnek ve güvenilir bir çözüm geliştirildi.
+- **Edge Function Güncellemesi (`invite-user/index.ts`):**
+  - Müşteri davet eden Supabase Edge Function, artık davet edilen kullanıcının `app_metadata`'sına `{ "roles": ["Customer"], "status": "invited" }` verisini ekleyecek şekilde güncellendi. Bu `status` alanı, kullanıcının davet akışını henüz tamamlamadığını gösteren bir bayrak görevi görür.
+- **State Management Güncellemesi (`auth.store.ts`):**
+  - Pinia tabanlı `authStore`, JWT'yi parse ederken `app_metadata` içindeki bu yeni `status` alanını okuyacak ve state'e kaydedecek şekilde genişletildi.
+  - Store'a, o anki kullanıcının davetli mi yoksa aktif mi olduğunu kolayca kontrol edebilmek için yeni `getter`'lar eklendi.
+- **Güvenli Yönlendirme (`router/index.ts`):**
+  - Uygulamanın ana yönlendiricisine (`router guard`), `authStore`'daki kullanıcı durumunu kontrol eden bir mantık eklendi.
+  - Bu mantık, `status`'u `'invited'` olan bir kullanıcının, şifre belirleme sayfası (`/set-password`) dışında hiçbir sayfaya erişememesini garanti altına alır. Kullanıcı başka bir sayfaya gitmeye çalışırsa, otomatik olarak `/set-password`'e yönlendirilir.
+
+Bu çalışmalarla, davet edilen kullanıcıların sisteme kontrollü bir şekilde dahil edilmesini sağlayan güvenli ve sağlam bir temel oluşturulmuştur.
+
+---
+
+## 30 Temmuz 2025 Çarşamba
+
+Bugün, projenin en önemli özelliklerinden biri olan **Yönetici tarafından Müşteri Davet Etme** mekanizmasının altyapısı, modern ve sunucusuz (serverless) bir yaklaşımla, **Supabase Edge Functions** kullanılarak kuruldu.
+
+### Supabase Edge Function Geliştirmesi
+- **Supabase CLI Entegrasyonu:**
+  - Geliştirme ortamına `supabase` CLI kuruldu ve `npx supabase init` ile proje yapısı oluşturuldu.
+  - `npx supabase link` komutu kullanılarak yerel proje, buluttaki Supabase projesine başarıyla bağlandı.
+- **`invite-user` Fonksiyonu:**
+  - `npx supabase functions new invite-user` komutuyla, Deno (TypeScript) tabanlı yeni bir sunucusuz fonksiyon oluşturuldu.
+  - Fonksiyonun ana mantığı, Supabase'in admin yetkilerine sahip bir istemci (`service_role_key` kullanarak) oluşturup, bu istemci aracılığıyla `inviteUserByEmail` metodunu çağırmak üzerine kuruldu.
+- **Güvenlik ve Rol Atama:**
+  - Fonksiyonun, yetkisiz kişiler tarafından çağrılmasını engellemek için, isteği yapan kullanıcının JWT'sini doğrulayan ve içinde "Admin" rolünün olup olmadığını kontrol eden bir güvenlik katmanı eklendi.
+  - Davet edilen kullanıcıya, `app_metadata` üzerinden otomatik olarak "Customer" rolünün atanması sağlandı. Bu, davet edilen her kullanıcının sisteme doğru yetkilerle başlamasını garanti eder.
+- **Frontend Entegrasyonu:**
+  - `CustomerService.ts` içine, bu yeni Edge Function'ı çağıran `inviteCustomer` adında yeni bir metot eklendi.
+  - `CustomerFormView.vue`, "Yeni Müşteri Ekle" modundayken artık doğrudan backend'e `POST` isteği atmak yerine, bu yeni `inviteCustomer` servisini çağıracak şekilde güncellendi.
+
+Bu geliştirme ile birlikte, müşteri oluşturma süreci, güvenli, ölçeklenebilir ve modern bir sunucusuz mimariye taşınmıştır.
+
+---
+
 ## 29 Temmuz 2025 Salı
 
 Bugünün ana odağı, projeye yeni bir **Ayarlar Modülü** eklemek, bu modülün ilk işlevselliği olan para birimi yönetimini (Currency Management) hayata geçirmek ve bu süreçte proje genelinde tespit edilen çeşitli hataları ve tutarsızlıkları gidererek kod kalitesini artırmaktı.
@@ -73,7 +181,7 @@ Bugünün ana odağı, projenin ikinci ana modülü olan **Müşteri Cari**'nin 
   - Sıralamanın (örn: Z-A) düzgün çalışmamasına neden olan reaktivite (state management) hatası, `v-select` component'inin state'i daha basit ve güvenilir bir string (`'name_desc'`) üzerinden yönetmesi sağlanarak çözüldü.
 - **Veri Bütünlüğü ve Test Verisi:**
   - Düzenleme formunda hatalı verilerin görünmesi sorununun, koddan değil, veritabanındaki bozuk bir kayıttan kaynaklandığı tespit edildi.
-  - Geliştirme ortamını zenginleştirmek için, Entity Framework Core'un "Data Seeding" mekanizması kullanılarak veritabanına 20 adet örnek müşteri verisi eklendi. Bu süreçte karşılaşılan `ConnectionString` ve `DateTime.UtcNow` gibi `dotnet ef` komut hataları, `ApplicationDbContextFactory`'nin düzeltilmesi ve sabit tarih değerleri kullanılmasıyla aşıldı.
+  - Geliştirme ortamını zenginleştirmek için, Entity Framework Core'un "Data Seeding" mekanizması kullanılarak veritabanına 20 adet örnek müşteri verisi eklendi. Bu süreçte karşılaşılan `ConnectionString` ve `dotnet ef` komut hataları, `ApplicationDbContextFactory`'nin düzeltilmesi ve sabit tarih değerleri kullanılmasıyla aşıldı.
 
 Bugünkü çalışmalar sonucunda, Müşteri modülü hem backend hem de frontend olarak tamamlanmış, test edilmiş ve proje planına uygun şekilde teslim edilmiştir.
 

@@ -67,6 +67,13 @@ const formatCurrency = (value: number, currencyCode: string = 'TRY') => {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: currencyCode }).format(value);
 };
 
+const teklifDurum = computed({
+  get: () => Number(teklif.value.durum),
+  set: (val) => {
+    teklif.value.durum = val;
+  }
+});
+
 // --- Veri Yükleme ---
 onMounted(async () => {
   loading.value = true;
@@ -166,20 +173,32 @@ const selectedCurrencyCode = computed(() => {
 
 // --- Kaydetme Mantığı ---
 const saveQuote = async () => {
+  console.log('Saving quote. isEditMode:', isEditMode.value); // Hata ayıklama için eklendi
   loading.value = true;
   errorMessage.value = '';
+  let success = false;
+  let successMessage = '';
+
   try {
     if (isEditMode.value) {
       await handleUpdate();
+      successMessage = 'Teklif başarıyla güncellendi.';
     } else {
       await handleCreate();
+      successMessage = 'Teklif başarıyla oluşturuldu.';
     }
-    router.push('/quotes');
+    success = true;
   } catch (error: any) {
     errorMessage.value = error.response?.data?.errors?.[0]?.ErrorMessage || 'Bir hata oluştu.';
-    notifier.error(errorMessage.value);
+    notifier.error(errorMessage.value, { autoClose: 4000 });
   } finally {
     loading.value = false;
+    if (success) {
+      router.push({ 
+        name: 'quotes', 
+        state: { notification: { type: 'success', message: successMessage, duration: 6000 } } 
+      });
+    }
   }
 };
 
@@ -200,7 +219,7 @@ async function handleCreate() {
     })),
   };
   await TeklifService.create(payload);
-  notifier.success('Teklif başarıyla oluşturuldu.');
+  // notifier.success('Teklif başarıyla oluşturuldu.', { autoClose: 6000 }); // Bu satır yukarı taşındı.
 }
 
 async function handleUpdate() {
@@ -224,7 +243,7 @@ async function handleUpdate() {
   };
   
   await TeklifService.update(quoteId.value!, payload);
-  notifier.success('Teklif başarıyla güncellendi.');
+  // notifier.success('Teklif başarıyla güncellendi.', { autoClose: 6000 }); // Bu satır yukarı taşındı.
 }
 
 </script>
@@ -249,7 +268,7 @@ async function handleUpdate() {
                 item-title="fullName"
                 item-value="id"
                 label="Müşteri Seçin"
-                :rules="[v => !!v || 'Müşteri seçimi zorunludur']"
+                :rules="[(v: any) => !!v || 'Müşteri seçimi zorunludur']"
                 required
               ></v-autocomplete>
             </v-col>
@@ -280,7 +299,7 @@ async function handleUpdate() {
             </v-col>
             <v-col v-if="isEditMode" cols="12" md="2">
               <v-select
-                v-model="teklif.durum"
+                v-model="teklifDurum"
                 :items="statusOptions"
                 item-title="title"
                 item-value="value"

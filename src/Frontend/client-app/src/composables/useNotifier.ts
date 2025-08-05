@@ -1,24 +1,25 @@
 // src/composables/useNotifier.ts
-import { useToast } from 'vue-toastify';
+import { toast, type ToastOptions } from 'vue3-toastify';
 
 export function useNotifier() {
-  const toast = useToast();
-
-  const success = (message: string) => {
-    toast.success(message);
+  // Bu fonksiyonlar artık ikinci bir argüman olarak ToastOptions alabilir.
+  // Bu sayede her bildirim için özel ayarlar (örn: autoClose) yapabiliriz.
+  const success = (message: string, options?: ToastOptions) => {
+    toast.success(message, options);
   };
 
-  const error = (message: string) => {
-    toast.error(message);
+  const error = (message: string, options?: ToastOptions) => {
+    toast.error(message, options);
   };
 
-  const info = (message: string) => {
-    toast.info(message);
+  const info = (message: string, options?: ToastOptions) => {
+    toast.info(message, options);
   };
 
-  const warn = (message: string) => {
-    toast.warn(message);
+  const warn = (message: string, options?: ToastOptions) => {
+    toast.warn(message, options);
   };
 
   return { success, error, info, warn };
 }
+

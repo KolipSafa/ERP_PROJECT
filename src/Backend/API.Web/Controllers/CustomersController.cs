@@ -44,7 +44,7 @@ namespace API.Web.Controllers
         public async Task<IActionResult> Create(CreateCustomerCommand command)
         {
             var result = await _mediator.Send(command);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            return CreatedAtAction(nameof(GetById), new { id = result.Customer.Id }, result);
         }
 
         [HttpPatch("{id}")]

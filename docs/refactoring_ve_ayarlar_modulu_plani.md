@@ -90,9 +90,16 @@ Bu belge, projeye yeni bir "Ayarlar" modülü eklemek, mevcut modülleri bu yeni
 *   `✅` **Frontend - Entegrasyon:** Müşteri, Ürün ve Teklif formları, Ayarlar modülünden gelen Firma ve Para Birimi verilerini kullanacak şekilde (`v-autocomplete`, `v-select`) güncellendi.
 *   `✅` **Frontend - Tasarım İyileştirmeleri:** Kullanıcı geri bildirimleri doğrultusunda Ayarlar sayfasının yerleşimi, onay diyalogları ve toast bildirimlerinin tasarımları iyileştirildi.
 *   `✅` **Genel Hata Ayıklama:** Oturum boyunca karşılaşılan çok sayıda DI (Dependency Injection), null referans, dosya kilitleme ve frontend derleme/çalışma zamanı hatası giderildi.
+*   `✅` **Bildirim Sistemi Refactoring'i:** Projenin bildirim altyapısı, `vue-toastify` kütüphanesinden modern `vue3-toastify`'a geçirildi. Bu geçişle birlikte, bildirimlerin (toast) stilleri, süreleri ve sayfa yönlendirmeleri sonrası davranışları tamamen elden geçirildi. Artık tüm bildirimler, projenin temasıyla uyumlu, mat bir görünüme sahip ve işlem sonucuna göre (başarı/hata) farklı renklerde gösteriliyor. Kaydetme sonrası yönlendirmelerde kaybolan bildirim sorunu, `history.state` kullanılarak kalıcı olarak çözüldü.
 
-**KALINAN YER VE BİR SONRAKİ ADIM:**
+---
 
-**Mevcut Durum:** Proje, hem backend hem de frontend'de büyük ölçüde tamamlanmış ve sağlamlaştırılmıştır. Ancak, tüm bu düzeltmelere rağmen, **yeni bir ürün eklerken** hala `FOREIGN KEY constraint "FK_Products_Currencies_CurrencyId"` hatası alınmaktadır.
+### **Proje Durumu**
 
-**➡️ Bir Sonraki Adım:** **Bu inatçı hatayı izole edip çözmek.** Taze bir başlangıç yaparak, `ProductFormView.vue`'den gönderilen `payload`'u ve `CreateProductCommandHandler`'ın bu `payload`'u nasıl işlediğini adım adım inceleyerek sorunun kök nedenini kesin olarak tespit etmek.
+**Tarih:** 31 Temmuz 2025
+
+**Durum:** `✅ Tamamlandı ve Sağlamlaştırıldı`
+
+Tüm hedefler başarıyla tamamlanmıştır. Ayarlar modülü (Firma ve Para Birimi yönetimi) hem backend hem de frontend olarak tamamen işlevseldir. Mevcut modüller (Müşteri, Ürün, Teklif) bu yeni yapıya sorunsuz bir şekilde entegre edilmiştir.
+
+Geliştirme sürecinde karşılaşılan tüm kritik hatalar, özellikle `CurrencyId` eksikliğinden kaynaklanan `FOREIGN KEY` veritabanı kısıtlama sorunları ve bildirim sistemindeki davranışsal problemler, kalıcı olarak çözülmüştür. Proje, kararlı ve çalışır bir durumdadır.

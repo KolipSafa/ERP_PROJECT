@@ -3,12 +3,11 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import CustomerService, { 
   type CustomerDto, 
-  type CreateCustomerPayload, 
+  type InviteCustomerPayload, 
   type UpdateCustomerPayload 
 } from '@/services/CustomerService';
 import SettingsService from '@/services/SettingsService';
 import type { CompanyDto } from '@/services/dtos/CompanyDto';
-import NotificationService from '@/services/NotificationService';
 
 import { useNotifier } from '@/composables/useNotifier';
 
@@ -18,18 +17,31 @@ const notifier = useNotifier();
 
 const customerId = computed(() => route.params.id as string | undefined);
 const isEditMode = computed(() => !!customerId.value);
-const pageTitle = computed(() => isEditMode.value ? 'Müşteri Düzenle' : 'Yeni Müşteri Ekle');
+const pageTitle = computed(() => isEditMode.value ? 'Müşteri Düzenle' : 'Yeni Müşteri Davet Et');
+
+const isFormValid = ref(false);
 
 const customer = ref<Partial<CustomerDto>>({
   firstName: '',
   lastName: '',
   companyId: undefined,
-  taxNumber: '',
-  address: '',
   phoneNumber: '',
   email: '',
   isActive: true,
 });
+
+const rules = {
+  required: (value: any) => !!value || 'Bu alan zorunludur.',
+  email: (value: string) => {
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return pattern.test(value) || 'Geçerli bir e-posta adresi giriniz.';
+  },
+  phone: (value: string) => {
+    if (!value) return true;
+    const digits = value.replace(/\D/g, '');
+    return digits.length >= 10 || 'Geçerli bir telefon numarası giriniz.';
+  }
+};
 
 const companies = ref<CompanyDto[]>([]);
 const loading = ref(false);
@@ -54,41 +66,55 @@ onMounted(async () => {
 });
 
 const saveCustomer = async () => {
+  if (!isFormValid.value) {
+    notifier.error('Lütfen formdaki tüm zorunlu alanları doğru bir şekilde doldurun.');
+    return;
+  }
+
   loading.value = true;
   errorMessage.value = '';
+  let success = false;
+  let successMessage = '';
+
+  const cleanedPhoneNumber = customer.value.phoneNumber?.replace(/\D/g, '');
+
   try {
     if (isEditMode.value) {
       const payload: UpdateCustomerPayload = {
         firstName: customer.value.firstName,
         lastName: customer.value.lastName,
         companyId: customer.value.companyId,
-        taxNumber: customer.value.taxNumber,
-        address: customer.value.address,
-        phoneNumber: customer.value.phoneNumber,
+        phoneNumber: cleanedPhoneNumber,
         email: customer.value.email,
         isActive: customer.value.isActive,
       };
       await CustomerService.update(customerId.value!, payload);
-      notifier.success('Müşteri başarıyla güncellendi.');
+      successMessage = 'Müşteri başarıyla güncellendi.';
     } else {
-      const payload: CreateCustomerPayload = {
-        firstName: customer.value.firstName!,
-        lastName: customer.value.lastName!,
-        companyId: customer.value.companyId,
-        taxNumber: customer.value.taxNumber,
-        address: customer.value.address,
-        phoneNumber: customer.value.phoneNumber,
-        email: customer.value.email,
+      const payload: InviteCustomerPayload = {
+        email: customer.value.email!,
+        data: {
+          first_name: customer.value.firstName!,
+          last_name: customer.value.lastName!,
+          company_id: customer.value.companyId,
+          phone_number: cleanedPhoneNumber,
+        }
       };
-      await CustomerService.create(payload);
-      notifier.success('Müşteri başarıyla oluşturuldu.');
+      await CustomerService.inviteCustomer(payload);
+      successMessage = 'Müşteri başarıyla davet edildi. Kullanıcıya şifre belirlemesi için bir e-posta gönderildi.';
     }
-    router.push('/customers');
+    success = true;
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.errors?.[0]?.ErrorMessage || 'Bir hata oluştu.';
-    notifier.error(errorMessage.value);
+    errorMessage.value = error.response?.data?.errors?.[0]?.ErrorMessage || error.message || 'Bir hata oluştu.';
+    notifier.error(errorMessage.value, { autoClose: 4000 });
   } finally {
     loading.value = false;
+    if (success) {
+      router.push({ 
+        name: 'customers', 
+        state: { notification: { type: 'success', message: successMessage, duration: 6000 } } 
+      });
+    }
   }
 };
 </script>
@@ -103,13 +129,13 @@ const saveCustomer = async () => {
           {{ errorMessage }}
         </v-alert>
 
-        <v-form @submit.prevent="saveCustomer">
+        <v-form v-model="isFormValid" @submit.prevent="saveCustomer">
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="customer.firstName"
                 label="Ad"
-                :rules="[v => !!v || 'Ad zorunludur']"
+                :rules="[rules.required]"
                 required
               ></v-text-field>
             </v-col>
@@ -117,7 +143,7 @@ const saveCustomer = async () => {
               <v-text-field
                 v-model="customer.lastName"
                 label="Soyad"
-                :rules="[v => !!v || 'Soyad zorunludur']"
+                :rules="[rules.required]"
                 required
               ></v-text-field>
             </v-col>
@@ -128,25 +154,18 @@ const saveCustomer = async () => {
                 item-title="name"
                 item-value="id"
                 label="Firma"
+                :rules="[rules.required]"
+                required
                 clearable
               ></v-autocomplete>
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="customer.taxNumber"
-                label="Vergi Numarası"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12">
-              <v-text-field
-                v-model="customer.address"
-                label="Adres"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
                 v-model="customer.phoneNumber"
                 label="Telefon Numarası"
+                :rules="[rules.phone]"
+                mask="(###) ###-####"
+                placeholder="(555) 123-4567"
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="6">
@@ -154,6 +173,8 @@ const saveCustomer = async () => {
                 v-model="customer.email"
                 label="E-posta Adresi"
                 type="email"
+                :rules="[rules.required, rules.email]"
+                required
               ></v-text-field>
             </v-col>
             
@@ -187,8 +208,9 @@ const saveCustomer = async () => {
               color="primary"
               class="ml-2"
               :loading="loading"
+              :disabled="!isFormValid"
             >
-              Kaydet
+              {{ isEditMode ? 'Kaydet' : 'Davet Gönder' }}
             </v-btn>
           </div>
         </v-form>

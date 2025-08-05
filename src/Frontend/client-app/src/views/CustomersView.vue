@@ -2,9 +2,11 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import CustomerService, { type CustomerDto, type CustomerFilterParams } from '@/services/CustomerService';
+import { useNotifier } from '@/composables/useNotifier';
 import debounce from 'lodash.debounce';
 
 const router = useRouter();
+const notifier = useNotifier();
 const customers = ref<CustomerDto[]>([]);
 const loading = ref(true);
 
@@ -72,12 +74,25 @@ const fetchCustomers = async () => {
     customers.value = response.data;
   } catch (error) {
     console.error('Müşteriler getirilirken bir hata oluştu:', error);
+    notifier.error('Müşteriler getirilirken bir hata oluştu.', { autoClose: 4000 });
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(fetchCustomers);
+onMounted(() => {
+  const notification = history.state.notification as { type: 'success' | 'error', message: string, duration?: number } | null;
+  if (notification) {
+    if (notification.type === 'success') {
+      notifier.success(notification.message, { autoClose: notification.duration || 4000 });
+    } else if (notification.type === 'error') {
+      notifier.error(notification.message, { autoClose: notification.duration || 4000 });
+    }
+    history.replaceState({ ...history.state, notification: null }, '');
+  }
+  
+  fetchCustomers();
+});
 
 watch(filters, debounce(fetchCustomers, 300), { deep: true });
 
@@ -92,25 +107,37 @@ watch(selectedSort, (newSortValue) => {
 // --- Eylem Fonksiyonları ---
 const archiveCustomer = async () => {
   if (!selectedCustomer.value) return;
-  await CustomerService.archive(selectedCustomer.value.id);
-  fetchCustomers(); // Listeyi yenile
+  try {
+    await CustomerService.archive(selectedCustomer.value.id);
+    notifier.success(`'${selectedCustomer.value.fullName}' başarıyla arşivlendi.`, { autoClose: 4000 });
+    fetchCustomers(); // Listeyi yenile
+  } catch (error) {
+    notifier.error('Müşteri arşivlenirken bir hata oluştu.', { autoClose: 4000 });
+    console.error(error);
+  }
 };
 
 const restoreCustomer = async () => {
   if (!selectedCustomer.value) return;
-  await CustomerService.restore(selectedCustomer.value.id);
-  fetchCustomers(); // Listeyi yenile
+  try {
+    await CustomerService.restore(selectedCustomer.value.id);
+    notifier.success(`'${selectedCustomer.value.fullName}' başarıyla geri yüklendi.`, { autoClose: 4000 });
+    fetchCustomers(); // Listeyi yenile
+  } catch (error) {
+    notifier.error('Müşteri geri yüklenirken bir hata oluştu.', { autoClose: 4000 });
+    console.error(error);
+  }
 };
 // -------------------------
 
 const headers: any[] = [
-  { title: '', key: 'data-table-expand' }, // Genişletme ikonu için boş başlık
   { title: 'Ad Soyad', key: 'fullName' },
   { title: 'Firma Adı', key: 'companyName' },
   { title: 'E-posta', key: 'email' },
   { title: 'Telefon', key: 'phoneNumber' },
   { title: 'Bakiye', key: 'balance', align: 'end' },
-  { title: 'Durum', key: 'isActive', align: 'center' },
+  { title: 'Cari Durumu', key: 'isActive', align: 'center' },
+  { title: 'Hesap Durumu', key: 'isAccountActive', align: 'center' },
   { title: 'Eylemler', key: 'actions', sortable: false, align: 'end' },
 ];
 </script>
@@ -154,7 +181,6 @@ const headers: any[] = [
           item-value="id"
           fixed-header
           height="65vh"
-          show-expand
         >
           <template v-slot:item.balance="{ item }">
             <span>{{ new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(item.balance) }}</span>
@@ -163,6 +189,15 @@ const headers: any[] = [
           <template v-slot:item.isActive="{ item }">
             <v-chip :color="item.isActive ? 'green' : 'red'" size="small">
               {{ item.isActive ? 'Aktif' : 'Pasif' }}
+            </v-chip>
+          </template>
+
+          <template v-slot:item.isAccountActive="{ item }">
+            <v-chip v-if="item.isAccountActive" color="blue" size="small">
+              Aktif
+            </v-chip>
+            <v-chip v-else color="orange" size="small">
+              Aktivasyon Bekliyor
             </v-chip>
           </template>
           
@@ -177,25 +212,6 @@ const headers: any[] = [
               <v-btn icon="mdi-restore" variant="text" size="small" class="me-2" @click="openDialog({ title: 'Müşteriyi Geri Yükle', message: `<strong>${item.fullName}</strong> isimli müşteriyi tekrar aktif hale getirmek istediğinize emin misiniz?`, customer: item, onConfirm: restoreCustomer })"></v-btn>
               <!-- Müşteriler için kalıcı silme planlanmadığı için o menü burada yok. -->
             </div>
-          </template>
-
-          <template v-slot:expanded-row="{ columns, item }">
-            <tr>
-              <td :colspan="columns.length">
-                <v-card-text>
-                  <v-row>
-                    <v-col cols="12" md="6">
-                      <div class="font-weight-bold">Adres:</div>
-                      <div>{{ item.address || 'Girilmemiş' }}</div>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                      <div class="font-weight-bold">Vergi Numarası:</div>
-                      <div>{{ item.taxNumber || 'Girilmemiş' }}</div>
-                    </v-col>
-                  </v-row>
-                </v-card-text>
-              </td>
-            </tr>
           </template>
 
         </v-data-table>

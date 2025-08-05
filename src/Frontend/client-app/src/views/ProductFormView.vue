@@ -56,8 +56,12 @@ onMounted(async () => {
 });
 
 const saveProduct = async () => {
+  console.log('Saving product. isEditMode:', isEditMode.value); // Hata ayıklama için eklendi
   loading.value = true;
   errorMessage.value = '';
+  let success = false;
+  let successMessage = '';
+
   try {
     if (isEditMode.value) {
       const payload: UpdateProductPayload = {
@@ -70,7 +74,7 @@ const saveProduct = async () => {
         isActive: product.value.isActive,
       };
       await ProductService.update(Number(productId.value), payload);
-      notifier.success('Ürün başarıyla güncellendi.');
+      successMessage = 'Ürün başarıyla güncellendi.';
     } else {
       const payload: CreateProductPayload = {
         name: product.value.name!,
@@ -80,14 +84,21 @@ const saveProduct = async () => {
         stockQuantity: product.value.stockQuantity!,
       };
       await ProductService.create(payload);
-      notifier.success('Ürün başarıyla oluşturuldu.');
+      successMessage = 'Ürün başarıyla oluşturuldu.';
     }
-    router.push('/products');
+    success = true; // API isteği başarılı oldu.
   } catch (error: any) {
     errorMessage.value = error.response?.data?.errors?.[0]?.ErrorMessage || 'Bir hata oluştu.';
-    notifier.error(errorMessage.value);
+    notifier.error(errorMessage.value, { autoClose: 4000 });
   } finally {
     loading.value = false;
+    // Yönlendirme sadece API isteği başarılı olduysa yapılır.
+    if (success) {
+      router.push({ 
+        name: 'products', 
+        state: { notification: { type: 'success', message: successMessage, duration: 6000 } } 
+      });
+    }
   }
 };
 </script>
@@ -108,7 +119,7 @@ const saveProduct = async () => {
               <v-text-field
                 v-model="product.name"
                 label="Ürün Adı"
-                :rules="[v => !!v || 'Ürün adı zorunludur']"
+                :rules="[(v: string) => !!v || 'Ürün adı zorunludur']"
                 required
               ></v-text-field>
             </v-col>
@@ -136,7 +147,7 @@ const saveProduct = async () => {
                 v-model.number="product.price"
                 label="Fiyat"
                 type="number"
-                :rules="[v => v >= 0 || 'Fiyat negatif olamaz']"
+                :rules="[(v: number) => v >= 0 || 'Fiyat negatif olamaz']"
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="2">
@@ -153,7 +164,7 @@ const saveProduct = async () => {
                 v-model.number="product.stockQuantity"
                 label="Stok Miktarı"
                 type="number"
-                :rules="[v => v >= 0 || 'Stok negatif olamaz']"
+                :rules="[(v: number) => v >= 0 || 'Stok negatif olamaz']"
               ></v-text-field>
             </v-col>
             <v-col v-if="isEditMode" cols="12">

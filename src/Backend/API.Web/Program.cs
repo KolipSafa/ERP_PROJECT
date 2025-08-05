@@ -1,77 +1,137 @@
 using API.Web.Middleware;
 using Application.Common.Behaviors;
+using Application.Interfaces;
 using Application.Mappings;
 using Core.Domain.Interfaces;
 using FluentValidation;
+using Hangfire;
 using Infrastructure.Persistence;
-using Infrastructure.Persistence.Repositories; // Eklendi
+using Infrastructure.Persistence.Repositories;
+using Infrastructure.Services;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
+using Serilog;
+using Hangfire.PostgreSql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// CORS Politikasını Tanımla
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Host.UseSerilog((context, configuration) => 
+    configuration.ReadFrom.Configuration(context.Configuration));
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: MyAllowSpecificOrigins,
+    options.AddPolicy(name: "_myAllowSpecificOrigins",
                       policy =>
                       {
-                          policy.WithOrigins("http://localhost:5173") // Frontend'in adresi
+                          policy.WithOrigins("http://localhost:5173")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod();
                       });
 });
 
+// Use .NET 9's built-in OpenAPI support
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "My API", Version = "v1" });
+});
 
-// Add services to the container.
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add FluentValidation and Validators
-// Yaşam döngüsünü Scoped olarak ayarlıyoruz ki veritabanı erişimi yapabilelim.
-builder.Services.AddValidatorsFromAssembly(typeof(ProductMappings).Assembly, ServiceLifetime.Scoped);
+if (builder.Environment.IsEnvironment("Test") == false)
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    {
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    });
+    
+    // Correctly configure Hangfire with a connection string
+    builder.Services.AddHangfire(config => config
+        .UsePostgreSqlStorage(options => 
+        {
+            options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"));
+        }));
+    builder.Services.AddHangfireServer();
+}
 
-// Add AutoMapper
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.Authority = builder.Configuration["Jwt:Authority"];
+    options.Audience = builder.Configuration["Jwt:Audience"];
+    options.RequireHttpsMetadata = false;
+});
+
+// Add HttpClient for our custom Supabase service and register the service
+builder.Services.AddHttpClient<ISupabaseAuthAdminService, SupabaseAuthAdminService>();
+
+
+// Add HttpClient for our custom Supabase service and register the service
+builder.Services.AddHttpClient<ISupabaseAuthAdminService, SupabaseAuthAdminService>();
+
+
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
+builder.Services.AddScoped<ICurrencyRepository, CurrencyRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<ITeklifRepository, TeklifRepository>();
+
+builder.Services.AddScoped<IBackgroundJobService, HangfireJobService>();
+
 builder.Services.AddAutoMapper(typeof(ProductMappings).Assembly);
 
-// Add Unit of Work and Repositories
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<ICompanyRepository, CompanyRepository>(); // Eklendi
-builder.Services.AddScoped<ICurrencyRepository, CurrencyRepository>(); // Eklendi
-
-
-// Configure MediatR with Pipeline Behaviors
 builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssembly(typeof(ProductMappings).Assembly);
     cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 });
 
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    // Correctly use the built-in OpenAPI middleware
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseSerilogRequestLogging();
 app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseCors("_myAllowSpecificOrigins");
+app.UseRouting();
 
-// CORS Politikasını Uygula
-app.UseCors(MyAllowSpecificOrigins);
-
-// app.UseHttpsRedirection(); // Will be re-enabled later
-
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
+
+if (app.Environment.IsEnvironment("Test") == false)
+{
+    app.MapHangfireDashboard();
+    
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        try
+        {
+            var context = services.GetRequiredService<ApplicationDbContext>();
+            await context.Database.MigrateAsync();
+        }
+        catch (Exception ex)
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "Veritabanı seed işlemi sırasında bir hata oluştu.");
+        }
+    }
+}
+
+
 app.Run();
+
+public partial class Program { }

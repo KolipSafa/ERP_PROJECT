@@ -1,11 +1,11 @@
-import axios from 'axios';
+import apiClient from './axios';
 import type { 
   TeklifDto, 
   CreateTeklifPayload, 
   UpdateTeklifPayload
 } from './dtos/TeklifDtos';
 
-const API_URL = 'https://localhost:7277/api/teklifler';
+const API_URL = '/teklifler';
 
 /**
  * Teklifler için filtreleme ve sıralama parametreleri.
@@ -29,7 +29,7 @@ class TeklifService {
    * Tüm teklifleri, belirtilen filtre ve sıralama seçenekleriyle getirir.
    */
   getAll(params?: TeklifFilterParams) {
-    return axios.get<TeklifDto[]>(API_URL, { params });
+    return apiClient.get<TeklifDto[]>(API_URL, { params });
   }
 
   /**
@@ -37,7 +37,7 @@ class TeklifService {
    * @param id Teklif ID'si
    */
   getById(id: string) {
-    return axios.get<TeklifDto>(`${API_URL}/${id}`);
+    return apiClient.get<TeklifDto>(`${API_URL}/${id}`);
   }
 
   /**
@@ -45,7 +45,7 @@ class TeklifService {
    * @param payload Yeni teklif verileri
    */
   create(payload: CreateTeklifPayload) {
-    return axios.post<TeklifDto>(API_URL, payload);
+    return apiClient.post<TeklifDto>(API_URL, payload);
   }
 
   /**
@@ -54,7 +54,7 @@ class TeklifService {
    * @param payload Teklifin son halini içeren veri
    */
   update(id: string, payload: UpdateTeklifPayload) {
-    return axios.put<TeklifDto>(`${API_URL}/${id}`, payload);
+    return apiClient.put<TeklifDto>(`${API_URL}/${id}`, payload);
   }
 
   /**
@@ -62,7 +62,7 @@ class TeklifService {
    * @param id Arşivlenecek teklifin ID'si
    */
   archive(id: string) {
-    return axios.delete(`${API_URL}/${id}`);
+    return apiClient.delete(`${API_URL}/${id}`);
   }
 
   /**
@@ -70,7 +70,7 @@ class TeklifService {
    * @param id Geri yüklenecek teklifin ID'si
    */
   restore(id: string) {
-    return axios.post(`${API_URL}/${id}/restore`);
+    return apiClient.post(`${API_URL}/${id}/restore`);
   }
 }
 

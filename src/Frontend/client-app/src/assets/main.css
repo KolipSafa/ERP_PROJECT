@@ -1,7 +1,7 @@
 @import './base.css';
 
 #app {
-  /* Bu varsayılan stiller artık Vuetify tarafından yönetildiği için kaldırılabilir veya düzenlenebilir. Şimdilik dokunmuyoruz. */
+  /* Vuetify tarafından yönetiliyor */
 }
 
 /* Modern Scrollbar Stilleri */
@@ -9,32 +9,57 @@
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
-
 ::-webkit-scrollbar-thumb {
   background: #c4c4c4;
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
 
-/* Vue Toastify İkon Boyutunu Düzeltme */
-.vt-icon svg {
-  width: 20px !important;
-  height: 20px !important;
+/* Vue3 Toastify Stil Ayarlamaları */
+
+/* Ana Toast Elemanı */
+.Toastify__toast {
+  background-color: #333333; /* Varsayılan mat arka plan */
+  color: #FFFFFF;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 15px !important;
+  padding: 16px !important;
 }
 
-/* Vue Toastify Genel Stil İyileştirmeleri */
-.Vue-Toastify__toast {
-  background-color: #333 !important; /* Tam opaklık için */
+/* Farklı Toast Türleri İçin Renkler */
+.Toastify__toast--success {
+  background-color: #2E7D32 !important; /* Koyu Yeşil */
+}
+
+.Toastify__toast--error {
+  background-color: #C62828 !important; /* Koyu Kırmızı */
+}
+
+.Toastify__toast--info {
+  background-color: #1976D2 !important; /* Koyu Mavi */
+}
+
+.Toastify__toast--warning {
+  background-color: #F57C00 !important; /* Koyu Turuncu */
+}
+
+/* Kapatma Butonu */
+.Toastify__close-button {
+  color: #FFFFFF !important;
+  opacity: 0.8 !important;
+}
+.Toastify__close-button:hover {
   opacity: 1 !important;
-  min-width: 320px; /* Standart genişlik */
-  min-height: 64px; /* Standart yükseklik */
-  align-items: center;
 }
 
+/* İlerleme Çubuğu */
+.Toastify__progress-bar {
+  background: rgba(255, 255, 255, 0.7) !important;
+}

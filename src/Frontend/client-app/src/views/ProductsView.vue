@@ -2,10 +2,12 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import ProductService, { type ProductDto, type ProductFilterParams } from '@/services/ProductService';
+import { useNotifier } from '@/composables/useNotifier';
 import debounce from 'lodash.debounce';
 import type { VDataTable } from 'vuetify/components';
 
 const router = useRouter();
+const notifier = useNotifier();
 const products = ref<ProductDto[]>([]);
 const loading = ref(true);
 
@@ -70,12 +72,25 @@ const fetchProducts = async () => {
     products.value = response.data;
   } catch (error) {
     console.error('Ürünler getirilirken bir hata oluştu:', error);
+    notifier.error('Ürünler getirilirken bir hata oluştu.', { autoClose: 4000 });
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(fetchProducts);
+onMounted(() => {
+  const notification = history.state.notification as { type: 'success' | 'error', message: string, duration?: number } | null;
+  if (notification) {
+    if (notification.type === 'success') {
+      notifier.success(notification.message, { autoClose: notification.duration || 4000 });
+    } else if (notification.type === 'error') {
+      notifier.error(notification.message, { autoClose: notification.duration || 4000 });
+    }
+    history.replaceState({ ...history.state, notification: null }, '');
+  }
+  fetchProducts();
+});
+
 watch(filters, debounce(fetchProducts, 300), { deep: true });
 watch(selectedSort, (newSortValue) => {
   filters.value.sortBy = newSortValue.sortBy;
@@ -85,20 +100,38 @@ watch(selectedSort, (newSortValue) => {
 // --- Eylem Fonksiyonları ---
 const archiveProduct = async () => {
   if (!selectedProduct.value) return;
-  await ProductService.archive(selectedProduct.value.id);
-  fetchProducts(); // Listeyi yenile
+  try {
+    await ProductService.archive(selectedProduct.value.id);
+    notifier.success(`'${selectedProduct.value.name}' başarıyla arşivlendi.`, { autoClose: 4000 });
+    fetchProducts(); // Listeyi yenile
+  } catch (error) {
+    notifier.error('Ürün arşivlenirken bir hata oluştu.', { autoClose: 4000 });
+    console.error(error);
+  }
 };
 
 const restoreProduct = async () => {
   if (!selectedProduct.value) return;
-  await ProductService.restore(selectedProduct.value.id);
-  fetchProducts(); // Listeyi yenile
+  try {
+    await ProductService.restore(selectedProduct.value.id);
+    notifier.success(`'${selectedProduct.value.name}' başarıyla geri yüklendi.`, { autoClose: 4000 });
+    fetchProducts(); // Listeyi yenile
+  } catch (error) {
+    notifier.error('Ürün geri yüklenirken bir hata oluştu.', { autoClose: 4000 });
+    console.error(error);
+  }
 };
 
 const hardDeleteProduct = async () => {
   if (!selectedProduct.value) return;
-  await ProductService.hardDelete(selectedProduct.value.id);
-  fetchProducts(); // Listeyi yenile
+  try {
+    await ProductService.hardDelete(selectedProduct.value.id);
+    notifier.warn(`'${selectedProduct.value.name}' kalıcı olarak silindi.`, { autoClose: 4000 });
+    fetchProducts(); // Listeyi yenile
+  } catch (error) {
+    notifier.error('Ürün silinirken bir hata oluştu.', { autoClose: 4000 });
+    console.error(error);
+  }
 };
 // -------------------------
 
