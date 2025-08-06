@@ -83,7 +83,7 @@ Müşteriyi iş akışının merkezine alan, teklif sürecini dinamik hale getir
     2.  **Yeni Modül: `views/InvoicesView.vue`:**
         *   Sistemdeki tüm faturaların listelendiği, yönetildiği ve görüntülendiği yeni bir sayfa oluşturulacak.
 
-*   **Adım 2.5: Güvenli Müşteri Davet ve Kayıt Akışının Uygulanması** `🎯 Güncel Hedef`
+*   **Adım 2.5: Güvenli Müşteri Davet ve Kayıt Akışının Uygulanması** `✅ Tamamlandı`
     *   **Genel Strateji:** Müşteri davet ve kayıt süreci, Supabase Edge Function'a eklenecek özel bir meta veri (`status: 'invited'`) ile yönetilecektir. Bu, davetle gelen kullanıcıların durumunu net bir şekilde belirleyerek, onları şifre belirleme ve hesap aktivasyon akışına doğru bir şekilde yönlendirmemizi sağlayacaktır.
     *   **Akış Adımları:**
         1.  **Yönetici Davet Eder (Frontend):** `✅ Tamamlandı`
@@ -96,17 +96,17 @@ Müşteriyi iş akışının merkezine alan, teklif sürecini dinamik hale getir
         4.  **Davet Durumu Kontrolü (Frontend):** `✅ Tamamlandı`
             *   `auth.store.ts` ve `router/index.ts`, `status`'u `'invited'` olan kullanıcıyı `/set-password` sayfasına zorunlu olarak yönlendirir.
         5.  **Müşteri Şifre Belirler (Frontend - `SetPasswordView.vue`):** `✅ Tamamlandı`
-            *   Müşteri, bu korumalı sayfada yeni şifresini oluşturur.
+            *   Müşteri, bu korumalı ve izole sayfada yeni şifresini oluşturur.
         6.  **Hesap Aktivasyonu ve Veritabanı Kaydı (Backend):** `✅ Tamamlandı`
             *   "Kaydet" butonuna tıklandığında, frontend önce Supabase'e şifreyi güncelletir.
             *   Ardından, backend API'sine **tek bir istek** atarak `CreateCustomerCommand`'ı çalıştırır.
             *   `CreateCustomerCommandHandler`, **tek bir atomik işlem içinde** hem müşteriyi ERP veritabanına kaydeder hem de **sunucu tarafında güvenli bir şekilde** Supabase kullanıcısının `app_metadata`'sındaki `status` alanını `'active'` olarak günceller.
-        7.  **Panele Yönlendirme (Frontend):** `❗ Yapılacak`
-            *   Backend'den başarılı yanıt alındıktan sonra, `SetPasswordView.vue` bileşeni, kullanıcıyı müşteri paneline (`/my-quotes`) yönlendirecektir. **(Mevcut hata burada yaşanmaktadır.)**
+        7.  **Panele Yönlendirme (Frontend):** `✅ Tamamlandı`
+            *   Backend'den başarılı yanıt alındıktan sonra, `SetPasswordView.vue` bileşeni, Supabase oturumunu tazeleyerek `auth.store`'u günceller ve kullanıcıyı müşteri paneline (`/my-quotes`) başarılı bir şekilde yönlendirir.
 
 ---
-### **Güncel Durum Notu (05.08.2025)**
+### **Güncel Durum Notu (06.08.2025)**
 
-**Kaldığımız Yer:** Müşteri davet ve aktivasyon akışının backend tarafındaki tüm adımları tamamlandı ve sağlamlaştırıldı. `supabase-csharp` kütüphanesinden kaynaklanan tüm sorunlar, doğrudan `HttpClient` kullanan bir servis yazılarak aşıldı. Müşteri kaydı ve Supabase'deki `status` güncellemesi artık tek bir güvenli backend işlemiyle hallediliyor.
+**Tamamlanan İş:** Müşteri davet ve aktivasyon akışının son adımı olan yönlendirme sorunu tamamen çözülmüştür. `SetPasswordView` sayfası artık izole bir arayüzde çalışmakta ve başarılı bir aktivasyon sonrası Supabase oturumunu tazeleyerek kullanıcıyı doğru bir şekilde müşteri paneline yönlendirmektedir. Bu adımla birlikte "Mimari Dönüşüm" aşaması tamamlanmıştır.
 
-**Sıradaki Adım:** Akışın son adımı olan, `SetPasswordView.vue` sayfasının, başarılı bir aktivasyon sonrası kullanıcıyı müşteri paneline doğru bir şekilde **yönlendirmesi** sorununu çözmek.
+**Sıradaki Adım:** Faz 1: Gelişmiş Envanter Yönetimi'ne başlanabilir.

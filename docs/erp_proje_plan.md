@@ -33,14 +33,14 @@ Bu roller, Supabase Auth JWT'lerinin `app_metadata` alanında saklanacak ve hem 
 
 Proje, iki ana ve birbiriyle paralel ilerleyecek aşamada tamamlanacaktır. Her faz, kendi içinde detaylı adımlara ayrılmıştır ve bu adımlar ilgili plan dokümanlarında açıklanmıştır.
 
-#### **Aşama 5 (Yeniden Tanımlandı): Mimari Dönüşüm ve Canlıya Hazırlık** `🎯 Devam Ediyor`
+#### **Aşama 5 (Yeniden Tanımlandı): Mimari Dönüşüm ve Canlıya Hazırlık** `✅ Tamamlandı`
 
 **Hedef:** Projenin teknik altyapısını yerel bağımlılıklardan kurtarıp tamamen bulut tabanlı hibrit mimariye taşımak, temel iş akışlarını (kullanıcı daveti vb.) tamamlamak ve canlıya çıkış için stabil bir temel oluşturmak.
 
 *   **Detaylı Plan:** Bu aşamanın tüm teknik adımları, `docs/01_architectural_migration_plan.md` dosyasında belgelenmiştir.
 *   **Öncelik:** **YÜKSEK**.
 *   **Özet:** Bu aşama kapsamında backend API'si ve frontend uygulaması, Supabase (Postgres & Auth) ile entegre olacak şekilde başarıyla güncellendi. Backend'deki .NET paket uyumsuzlukları giderildi. Supabase yönetici işlemleri için `supabase-csharp` kütüphanesinin yarattığı kararsızlıklardan kaçınmak amacıyla, doğrudan Supabase Management API'sine istek atan `HttpClient` tabanlı bir servis yazılarak mimari sağlamlaştırıldı. Frontend'de, davet linkiyle gelen kullanıcıların şifre belirlemesi ve sisteme doğru bir şekilde kaydedilmesi için karmaşık bir kimlik doğrulama akışı (Supabase Edge Function, Vue Router Guards, Pinia State Management) implemente edildi. Müşteri kaydı ve Supabase'deki `status` güncellemesi artık tek bir güvenli backend işlemiyle hallediliyor.
-*   **Mevcut Durum:** Akışın son adımı olan, şifresini başarıyla belirleyen kullanıcının müşteri paneline **yönlendirilmesi** aşamasında bir sorun yaşanmaktadır. Bu son sorun çözüldüğünde aşama tamamlanacaktır.
+*   **Mevcut Durum:** Müşteri davet, şifre belirleme ve aktivasyon akışı başarıyla tamamlanmıştır. Şifresini belirleyen kullanıcı, `status`'unun `active` olarak güncellenmesinin ardından başarılı bir şekilde müşteri paneline yönlendirilmektedir. Bu aşama tamamlanmıştır.
 
 #### **Aşama 6 (Yeniden Tanımlandı): Gelişmiş ERP İşlevleri ve Müşteri Etkileşimi** `📝 Planlandı`
 

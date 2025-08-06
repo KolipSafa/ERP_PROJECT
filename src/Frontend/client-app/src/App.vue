@@ -25,6 +25,10 @@ onMounted(() => {
 
 const { isLoggedIn, user } = storeToRefs(authStore)
 
+const showLayout = computed(() => {
+  return isLoggedIn.value && route.name !== 'set-password'
+})
+
 const pageTitle = computed(() => {
   const name = route.name?.toString()
   if (!name) {
@@ -65,12 +69,12 @@ const handleLogout = () => {
 
 <template>
   <v-app id="inspire">
-    <v-app-bar flat>
-      <v-app-bar-nav-icon v-if="isLoggedIn" @click="drawer = !drawer"></v-app-bar-nav-icon>
+    <v-app-bar v-if="showLayout" flat>
+      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title>{{ pageTitle }}</v-toolbar-title>
       <v-spacer></v-spacer>
 
-      <div v-if="isLoggedIn">
+      <div>
         <v-menu offset-y>
           <template v-slot:activator="{ props }">
             <v-btn v-bind="props" icon>
@@ -94,7 +98,7 @@ const handleLogout = () => {
       </div>
     </v-app-bar>
 
-    <v-navigation-drawer v-if="isLoggedIn" v-model="drawer">
+    <v-navigation-drawer v-if="showLayout" v-model="drawer">
       <v-list>
         <v-list-item
           v-for="item in navItems"

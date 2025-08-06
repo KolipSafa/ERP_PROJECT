@@ -52,13 +52,15 @@ const savePassword = async () => {
     // Bu çağrı artık backend'den güncel Supabase User bilgisini de getirecek
     await CustomerService.create(payload);
 
-    // 4. Store'u en güncel session bilgisiyle tazele
+    // 4. Store'u en güncel session bilgisiyle ZORLA tazele
     // Bu, backend'in yaptığı status değişikliğini anında yansıtacaktır.
-    await authStore.fetchUser();
+    await authStore.forceRefreshSession();
 
     notifier.success('Şifreniz başarıyla oluşturuldu ve hesabınız aktive edildi. Panele yönlendiriliyorsunuz...');
 
     // 5. Yönlendirmeyi yap
+    // Router guard (router/index.ts) artık güncel 'status' bilgisine sahip
+    // olduğu için doğru yönlendirmeyi kendisi yapacaktır.
     router.push('/my-quotes');
 
   } catch (error: any) {

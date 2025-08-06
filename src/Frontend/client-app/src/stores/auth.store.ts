@@ -95,6 +95,16 @@ export const useAuthStore = defineStore('auth', {
       this.setSession(session);
       return session?.user;
     },
+    async forceRefreshSession() {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error('Failed to refresh session:', error);
+        this.logout();
+      } else if (data.session) {
+        this.setSession(data.session);
+      }
+      return data.session;
+    },
     initialize() {
       if (this.isListenerInitialized) return;
 
