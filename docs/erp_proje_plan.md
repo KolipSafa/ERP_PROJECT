@@ -42,15 +42,16 @@ Proje, iki ana ve birbiriyle paralel ilerleyecek aşamada tamamlanacaktır. Her 
 *   **Özet:** Bu aşama kapsamında backend API'si ve frontend uygulaması, Supabase (Postgres & Auth) ile entegre olacak şekilde başarıyla güncellendi. Backend'deki .NET paket uyumsuzlukları giderildi. Supabase yönetici işlemleri için `supabase-csharp` kütüphanesinin yarattığı kararsızlıklardan kaçınmak amacıyla, doğrudan Supabase Management API'sine istek atan `HttpClient` tabanlı bir servis yazılarak mimari sağlamlaştırıldı. Frontend'de, davet linkiyle gelen kullanıcıların şifre belirlemesi ve sisteme doğru bir şekilde kaydedilmesi için karmaşık bir kimlik doğrulama akışı (Supabase Edge Function, Vue Router Guards, Pinia State Management) implemente edildi. Müşteri kaydı ve Supabase'deki `status` güncellemesi artık tek bir güvenli backend işlemiyle hallediliyor.
 *   **Mevcut Durum:** Müşteri davet, şifre belirleme ve aktivasyon akışı başarıyla tamamlanmıştır. Şifresini belirleyen kullanıcı, `status`'unun `active` olarak güncellenmesinin ardından başarılı bir şekilde müşteri paneline yönlendirilmektedir. Bu aşama tamamlanmıştır.
 
-#### **Aşama 6 (Yeniden Tanımlandı): Gelişmiş ERP İşlevleri ve Müşteri Etkileşimi** `📝 Planlandı`
+#### **Aşama 6 (Yeniden Tanımlandı): Gelişmiş ERP İşlevleri ve Müşteri Etkileşimi** `🎯 Devam Ediyor`
 
 **Hedef:** Projeyi, rezerve envanter takibi yapabilen, müşterilerin teklifleri onaylayıp karşı teklif sunabildiği ve bu süreçlerin sonunda otomatik fatura oluşturan, iş akışları zengin bir ERP platformuna dönüştürmek.
 
 *   **Detaylı Plan:** Bu aşamanın tüm iş mantığı ve arayüz geliştirme adımları, `docs/02_erp_feature_enhancement_plan.md` dosyasında belgelenmiştir.
-*   **Öncelik:** **ORTA**. Mimari dönüşüm tamamlandıktan sonra başlanacaktır.
-*   **Sıralama:**
-    1.  Faz 1: Gelişmiş Envanter Yönetimi
-    2.  Faz 2: Müşteri Etkileşimi ve Fatura Akışı
+*   **Öncelik:** **YÜKSEK**. Mimari dönüşüm tamamlandığı için sıradaki ana hedeftir.
+*   **Sıralama ve Mevcut Durum:**
+    1.  **Faz 2: Müşteri Etkileşimi ve Fatura Akışı** `✅ Tamamlandı`
+    2.  Faz 1: Gelişmiş Envanter Yönetimi `📝 Planlandı`
+*   **Teknik Not (Önemli):** Bu fazın geliştirilmesi sırasında, .NET API'sindeki `[Authorize(Roles="...")]` attribute'larının beklenmedik `401 Unauthorized` hatalarına yol açtığı ve geliştirmeyi engellediği tespit edilmiştir. Geliştirmeye devam edebilmek için, tüm Controller'lardaki rol tabanlı yetkilendirme etiketleri geçici olarak kaldırılmıştır. Bu, projenin şu anki halinde bir güvenlik açığı oluşturmaktadır. **Kullanıcının kararı doğrultusunda, bu konunun çözümü projedeki diğer tüm fonksiyonel geliştirmeler tamamlandıktan sonra, en son adım olarak ele alınacaktır.**
 
 ---
 

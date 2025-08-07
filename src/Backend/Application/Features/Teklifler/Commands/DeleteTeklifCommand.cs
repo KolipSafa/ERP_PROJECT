@@ -39,6 +39,17 @@ namespace Application.Features.Teklifler.Commands
                 throw new NotFoundException(nameof(Teklif), request.Id);
             }
 
+            // Rezerve edilen miktarları serbest bırak
+            foreach (var satir in teklifToDelete.TeklifSatirlari)
+            {
+                var product = await _unitOfWork.ProductRepository.GetByIdAsync(satir.UrunId);
+                if (product != null)
+                {
+                    product.ReservedQuantity -= (int)satir.Miktar;
+                    _unitOfWork.ProductRepository.Update(product);
+                }
+            }
+
             _unitOfWork.TeklifRepository.Delete(teklifToDelete);
             
             await _unitOfWork.SaveChangesAsync(cancellationToken);

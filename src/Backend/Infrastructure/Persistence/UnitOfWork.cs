@@ -17,6 +17,7 @@ namespace Infrastructure.Persistence
         private ITeklifRepository? _teklifRepository;
         private ICurrencyRepository? _currencyRepository;
         private ICompanyRepository? _companyRepository;
+        private IInvoiceRepository? _invoiceRepository;
 
         public UnitOfWork(ApplicationDbContext context)
         {
@@ -28,6 +29,7 @@ namespace Infrastructure.Persistence
         public ITeklifRepository TeklifRepository => _teklifRepository ??= new TeklifRepository(_context);
         public ICurrencyRepository CurrencyRepository => _currencyRepository ??= new CurrencyRepository(_context);
         public ICompanyRepository CompanyRepository => _companyRepository ??= new CompanyRepository(_context);
+        public IInvoiceRepository InvoiceRepository => _invoiceRepository ??= new InvoiceRepository(_context);
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

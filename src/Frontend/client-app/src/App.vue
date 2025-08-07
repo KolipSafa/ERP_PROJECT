@@ -45,11 +45,13 @@ const adminNavItems = [
   { title: 'Ürünler', icon: 'mdi-package-variant-closed', to: '/products' },
   { title: 'Müşteriler', icon: 'mdi-account-group', to: '/customers' },
   { title: 'Teklifler', icon: 'mdi-file-document-outline', to: '/quotes' },
+  { title: 'Fatura Yönetimi', icon: 'mdi-file-document-multiple-outline', to: '/invoices' },
   { title: 'Ayarlar', icon: 'mdi-cog', to: '/settings' },
 ];
 
 const customerNavItems = [
   { title: 'Tekliflerim', icon: 'mdi-file-document-outline', to: '/my-quotes' },
+  { title: 'Faturalarım', icon: 'mdi-file-document-multiple-outline', to: '/my-invoices' },
 ];
 
 const navItems = computed(() => {

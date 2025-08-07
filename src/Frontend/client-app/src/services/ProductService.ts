@@ -11,6 +11,8 @@ export interface ProductDto {
   currencyId: number;
   currencyCode?: string;
   stockQuantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
   sku: string;
   isActive: boolean;
 }

@@ -312,8 +312,8 @@ async function handleUpdate() {
 
           <!-- Teklif Satırları -->
           <h3 class="mb-4">Teklif Satırları</h3>
-          <v-row>
-            <v-col cols="12" md="10">
+          <v-row align="center">
+            <v-col cols="12" md="8">
               <v-autocomplete
                 v-model="selectedProduct"
                 v-model:search="productSearch"
@@ -324,7 +324,20 @@ async function handleUpdate() {
                 return-object
                 hide-details
                 no-filter
-              ></v-autocomplete>
+              >
+                <template v-slot:item="{ props, item }">
+                  <v-list-item v-bind="props" :title="item.raw.name">
+                    <template v-slot:subtitle>
+                      Stok: {{ item.raw.stockQuantity }} | Rezerve: {{ item.raw.reservedQuantity }}
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-autocomplete>
+            </v-col>
+            <v-col cols="12" md="2">
+              <v-chip v-if="selectedProduct" :color="selectedProduct.availableQuantity > 0 ? 'green' : 'red'" variant="tonal">
+                Kullanılabilir: {{ selectedProduct.availableQuantity }}
+              </v-chip>
             </v-col>
             <v-col cols="12" md="2">
               <v-btn color="primary" @click="addProductToQuote" :disabled="!selectedProduct" block height="56">

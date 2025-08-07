@@ -55,7 +55,19 @@ namespace Application.Features.Teklifler.Commands
                 throw new NotFoundException(nameof(Teklif), request.Id);
             }
 
-            // Ana teklif bilgilerini AutoMapper olmadan, manuel olarak güncelle
+            // --- Rezerve Miktarlarını Güncelleme Mantığı ---
+            // 1. Önceki tüm rezerve miktarlarını geri al
+            foreach (var mevcutSatir in teklifToUpdate.TeklifSatirlari)
+            {
+                var product = await _unitOfWork.ProductRepository.GetByIdAsync(mevcutSatir.UrunId);
+                if (product != null)
+                {
+                    product.ReservedQuantity -= (int)mevcutSatir.Miktar;
+                    _unitOfWork.ProductRepository.Update(product);
+                }
+            }
+
+            // Ana teklif bilgilerini güncelle
             teklifToUpdate.MusteriId = request.MusteriId ?? teklifToUpdate.MusteriId;
             teklifToUpdate.TeklifTarihi = request.TeklifTarihi ?? teklifToUpdate.TeklifTarihi;
             teklifToUpdate.GecerlilikTarihi = request.GecerlilikTarihi ?? teklifToUpdate.GecerlilikTarihi;
@@ -66,23 +78,22 @@ namespace Application.Features.Teklifler.Commands
             // --- Satırları Yönetme Mantığı ---
             var gelenSatirIdleri = request.TeklifSatirlari.Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToList();
             
-            // 1. Silinmiş Satırları Bul ve Kaldır
+            // 2. Silinmiş Satırları Bul ve Kaldır
             var silinecekSatirlar = teklifToUpdate.TeklifSatirlari.Where(s => !gelenSatirIdleri.Contains(s.Id)).ToList();
             foreach (var satir in silinecekSatirlar)
             {
                 _unitOfWork.TeklifRepository.DeleteSatir(satir);
             }
 
-            // 2. Mevcut ve Yeni Satırları Güncelle/Ekle
+            // 3. Mevcut ve Yeni Satırları Güncelle/Ekle
             foreach (var satirDto in request.TeklifSatirlari)
             {
-                if (satirDto.Id.HasValue)
+                if (satirDto.Id.HasValue && !satirDto.Id.ToString().StartsWith("new_"))
                 {
                     // Mevcut satırı güncelle
                     var mevcutSatir = teklifToUpdate.TeklifSatirlari.FirstOrDefault(s => s.Id == satirDto.Id.Value);
                     if (mevcutSatir != null)
                     {
-                        // EF'nin bu değişikliği algılaması için DTO'dan entity'e manuel mapping yapıyoruz.
                         mevcutSatir.Aciklama = satirDto.Aciklama;
                         mevcutSatir.Miktar = satirDto.Miktar;
                         mevcutSatir.BirimFiyat = satirDto.BirimFiyat;
@@ -94,7 +105,6 @@ namespace Application.Features.Teklifler.Commands
                     // Yeni satır ekle
                     var yeniSatir = new TeklifSatiri
                     {
-                        // Id'yi burada oluşturmuyoruz, veritabanı kendisi atayacak.
                         TeklifId = teklifToUpdate.Id,
                         UrunId = satirDto.UrunId,
                         Aciklama = satirDto.Aciklama,
@@ -102,13 +112,22 @@ namespace Application.Features.Teklifler.Commands
                         BirimFiyat = satirDto.BirimFiyat,
                         Toplam = satirDto.Miktar * satirDto.BirimFiyat
                     };
-                    // Doğrudan teklifin koleksiyonuna eklemek EF için en temiz yoldur.
                     teklifToUpdate.TeklifSatirlari.Add(yeniSatir);
                 }
             }
 
-            // Toplam tutarı yeniden hesapla
-            teklifToUpdate.ToplamTutar = teklifToUpdate.TeklifSatirlari.Sum(s => s.Toplam);
+            // 4. Yeni rezerve miktarlarını ayarla ve toplam tutarı hesapla
+            teklifToUpdate.ToplamTutar = 0;
+            foreach (var satir in teklifToUpdate.TeklifSatirlari)
+            {
+                var product = await _unitOfWork.ProductRepository.GetByIdAsync(satir.UrunId);
+                if (product != null)
+                {
+                    product.ReservedQuantity += (int)satir.Miktar;
+                    _unitOfWork.ProductRepository.Update(product);
+                }
+                teklifToUpdate.ToplamTutar += satir.Toplam;
+            }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

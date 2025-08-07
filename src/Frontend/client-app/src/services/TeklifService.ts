@@ -72,6 +72,34 @@ class TeklifService {
   restore(id: string) {
     return apiClient.post(`${API_URL}/${id}/restore`);
   }
+
+  // --- Müşteri Aksiyonları ---
+
+  /**
+   * Bir müşteri olarak, size sunulan bir teklifi onaylarsınız.
+   * Bu işlem, tekliften bir fatura oluşturulmasını tetikler.
+   * @param id Onaylanacak teklifin ID'si
+   */
+  approve(id: string) {
+    return apiClient.post(`${API_URL}/${id}/approve`);
+  }
+
+  /**
+   * Bir müşteri olarak, size sunulan bir teklifi reddedersiniz.
+   * @param id Reddedilecek teklifin ID'si
+   */
+  reject(id: string) {
+    return apiClient.post(`${API_URL}/${id}/reject`);
+  }
+
+  /**
+   * Bir müşteri olarak, teklif üzerinde değişiklik talep edersiniz.
+   * @param id Değişiklik talep edilen teklifin ID'si
+   * @param payload Değişiklik taleplerini içeren notlar ve satır bilgileri
+   */
+  requestChange(id: string, payload: any) { // TODO: payload için DTO tipi oluşturulmalı
+    return apiClient.post(`${API_URL}/${id}/request-change`, payload);
+  }
 }
 
 export default new TeklifService();

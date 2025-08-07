@@ -66,8 +66,8 @@ Mevcut .NET iş mantığını koruyarak, veritabanını **Supabase Postgres**'e 
     *   **Yönetici (Admin) Rolü:** Yöneticiler, Supabase arayüzünden manuel olarak oluşturulur, profilleri `Administrators` tablosuna kaydedilir ve `app_metadata`'larına `{ "roles": ["Admin"] }` eklenir.
     *   **Müşteri (Customer) Rolü:** Müşteriler, Edge Function ile davet edilir. Bu fonksiyon, `app_metadata`'ya `{ "roles": ["Customer"] }` rolünü otomatik olarak ekler.
 
-*   **Adım 4.4: Yetki Denetiminin Koda Eklenmesi** `✅ Tamamlandı`
-    *   **.NET API:** Kritik endpoint'lerin başına `[Authorize(Roles = "Admin")]` veya `[Authorize(Roles = "Customer")]` gibi attribute'lar eklenerek sunucu taraflı koruma sağlandı.
+*   **Adım 4.4: Yetki Denetiminin Koda Eklenmesi** `⚠️ Kısmen Tamamlandı / Sorunlu`
+    *   **.NET API:** Kritik endpoint'lerin başına `[Authorize(Roles = "Admin")]` veya `[Authorize(Roles = "Customer")]` gibi attribute'lar eklenerek sunucu taraflı koruma sağlandı. **Ancak, bu yaklaşımın beklenmedik `401 Unauthorized` hatalarına neden olduğu tespit edildi.** Geliştirme sürecinde bu sorun aşılamadığı için, Controller seviyesindeki rol tabanlı yetkilendirme geçici olarak kaldırılmıştır. Bu durum, bir sonraki geliştirme fazında çözülmesi gereken öncelikli bir teknik borçtur.
     *   **Vue Frontend:** `auth.store.ts` içindeki `user` nesnesi rolleri içerecek şekilde güncellendi. `v-if="authStore.isAdmin"` gibi direktiflerle menüler, butonlar ve sayfalar dinamik olarak gizlenip gösteriliyor.
 
 ---

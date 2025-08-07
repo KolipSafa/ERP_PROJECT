@@ -64,6 +64,39 @@ builder.Services.AddAuthentication(options =>
     options.Authority = builder.Configuration["Jwt:Authority"];
     options.Audience = builder.Configuration["Jwt:Audience"];
     options.RequireHttpsMetadata = false;
+
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = context =>
+        {
+            // Supabase JWT'sindeki rolleri ayrıştırıp .NET kimliğine ekliyoruz.
+            if (context.Principal?.Identity is System.Security.Claims.ClaimsIdentity identity &&
+                context.Principal.HasClaim(c => c.Type == "raw_app_meta_data"))
+            {
+                var appMetadata = context.Principal.Claims
+                    .FirstOrDefault(c => c.Type == "raw_app_meta_data")?.Value;
+
+                if (!string.IsNullOrEmpty(appMetadata))
+                {
+                    using (var jsonDoc = System.Text.Json.JsonDocument.Parse(appMetadata))
+                    {
+                        if (jsonDoc.RootElement.TryGetProperty("roles", out var rolesElem))
+                        {
+                            foreach (var role in rolesElem.EnumerateArray())
+                            {
+                                var roleValue = role.GetString();
+                                if (roleValue != null)
+                                {
+                                    identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, roleValue));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 // Add HttpClient for our custom Supabase service and register the service

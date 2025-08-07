@@ -14,21 +14,22 @@ const customers = ref<CustomerDto[]>([]);
 const loading = ref(true);
 
 // --- Filtreleme ve Sıralama State ---
+// Backend'deki GetAllTekliflerQuery ile eşleşmesi için PascalCase kullanıyoruz.
 const filters = ref<TeklifFilterParams>({
-  musteriId: undefined,
-  baslangicTarihi: undefined,
-  bitisTarihi: undefined,
-  durum: undefined,
-  includeInactive: false,
-  sortBy: 'date',
-  sortOrder: 'desc',
+  MusteriId: undefined,
+  BaslangicTarihi: undefined,
+  BitisTarihi: undefined,
+  Durum: undefined,
+  IncludeInactive: false,
+  SortBy: 'date',
+  SortOrder: 'desc',
 });
 
 const sortOptions = [
-  { title: 'Tarihe Göre (Yeni)', value: { sortBy: 'date', sortOrder: 'desc' as const } },
-  { title: 'Tarihe Göre (Eski)', value: { sortBy: 'date', sortOrder: 'asc' as const } },
-  { title: 'Tutara Göre (Artan)', value: { sortBy: 'amount', sortOrder: 'asc' as const } },
-  { title: 'Tutara Göre (Azalan)', value: { sortBy: 'amount', sortOrder: 'desc' as const } },
+  { title: 'Tarihe Göre (Yeni)', value: { SortBy: 'date', SortOrder: 'desc' as const } },
+  { title: 'Tarihe Göre (Eski)', value: { SortBy: 'date', SortOrder: 'asc' as const } },
+  { title: 'Tutara Göre (Artan)', value: { SortBy: 'amount', SortOrder: 'asc' as const } },
+  { title: 'Tutara Göre (Azalan)', value: { SortBy: 'amount', SortOrder: 'desc' as const } },
 ];
 const selectedSort = ref(sortOptions[0].value);
 
@@ -56,11 +57,26 @@ function confirmDialog() {
 
 // --- Durum Yönetimi ---
 const statusOptions = [
-  { title: 'Hazırlanıyor', value: 0 },
-  { title: 'Sunuldu', value: 1 },
-  { title: 'Onaylandı', value: 2 },
-  { title: 'Reddedildi', value: 3 },
+  { title: 'Sunuldu', value: 0 },
+  { title: 'Onaylandı', value: 1 },
+  { title: 'Reddedildi', value: 2 },
+  { title: 'Değişiklik Talep Edildi', value: 3 },
 ];
+
+const getStatusText = (statusValue: number) => {
+  const status = statusOptions.find(s => s.value === statusValue);
+  return status ? status.title : 'Bilinmeyen';
+};
+
+const getStatusColor = (statusValue: number) => {
+  switch (statusValue) {
+    case 0: return 'info'; // Sunuldu
+    case 1: return 'success'; // Onaylandı
+    case 2: return 'error'; // Reddedildi
+    case 3: return 'orange'; // Değişiklik Talep Edildi
+    default: return 'grey';
+  }
+};
 
 const headers: any[] = [
   { title: 'Teklif Numarası', key: 'teklifNumarasi' },
@@ -110,8 +126,8 @@ onMounted(() => {
 
 watch(filters, debounce(fetchTeklifler, 400), { deep: true });
 watch(selectedSort, (newSortValue) => {
-  filters.value.sortBy = newSortValue.sortBy;
-  filters.value.sortOrder = newSortValue.sortOrder;
+  filters.value.SortBy = newSortValue.SortBy;
+  filters.value.SortOrder = newSortValue.SortOrder;
 });
 
 const updateStatus = async (teklifToUpdate: TeklifDto, yeniDurumValue: number) => {
@@ -172,14 +188,6 @@ const formatCurrency = (value: number, currencyCode: string = 'TRY') => {
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: currencyCode }).format(value);
 };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Onaylandı': return 'success';
-    case 'Reddedildi': return 'error';
-    case 'Sunuldu': return 'info';
-    default: return 'grey';
-  }
-};
 </script>
 
 <template>
@@ -201,22 +209,22 @@ const getStatusColor = (status: string) => {
             <v-expansion-panel-text>
               <v-row align="center">
                 <v-col cols="12" md="3">
-                  <v-autocomplete v-model="filters.musteriId" :items="customers" item-title="fullName" item-value="id" label="Müşteriye Göre Filtrele" density="compact" hide-details clearable></v-autocomplete>
+                  <v-autocomplete v-model="filters.MusteriId" :items="customers" item-title="fullName" item-value="id" label="Müşteriye Göre Filtrele" density="compact" hide-details clearable></v-autocomplete>
                 </v-col>
                 <v-col cols="6" md="2">
-                  <v-text-field v-model="filters.baslangicTarihi" label="Başlangıç Tarihi" type="date" density="compact" hide-details clearable></v-text-field>
+                  <v-text-field v-model="filters.BaslangicTarihi" label="Başlangıç Tarihi" type="date" density="compact" hide-details clearable></v-text-field>
                 </v-col>
                 <v-col cols="6" md="2">
-                  <v-text-field v-model="filters.bitisTarihi" label="Bitiş Tarihi" type="date" density="compact" hide-details clearable></v-text-field>
+                  <v-text-field v-model="filters.BitisTarihi" label="Bitiş Tarihi" type="date" density="compact" hide-details clearable></v-text-field>
                 </v-col>
                 <v-col cols="12" md="2">
-                  <v-select v-model="filters.durum" :items="statusOptions" item-title="title" item-value="value" label="Duruma Göre" density="compact" hide-details clearable></v-select>
+                  <v-select v-model="filters.Durum" :items="statusOptions" item-title="title" item-value="value" label="Duruma Göre" density="compact" hide-details clearable></v-select>
                 </v-col>
                 <v-col cols="6" md="2">
                   <v-select v-model="selectedSort" :items="sortOptions" label="Sırala" density="compact" hide-details></v-select>
                 </v-col>
                 <v-col cols="6" md="1">
-                  <v-switch v-model="filters.includeInactive" label="Pasifler" color="primary" hide-details></v-switch>
+                  <v-switch v-model="filters.IncludeInactive" label="Pasifler" color="primary" hide-details></v-switch>
                 </v-col>
               </v-row>
             </v-expansion-panel-text>
@@ -238,7 +246,7 @@ const getStatusColor = (status: string) => {
             <span>{{ formatCurrency(item.toplamTutar, item.currencyCode) }}</span>
           </template>
           <template v-slot:item.durum="{ item }">
-            <v-chip :color="getStatusColor(String(item.durum))" size="small">{{ item.durum }}</v-chip>
+            <v-chip :color="getStatusColor(item.durum)" size="small">{{ getStatusText(item.durum) }}</v-chip>
           </template>
           <template v-slot:item.isActive="{ item }">
             <v-chip :color="item.isActive ? 'green' : 'red'" size="small">{{ item.isActive ? 'Aktif' : 'Pasif' }}</v-chip>

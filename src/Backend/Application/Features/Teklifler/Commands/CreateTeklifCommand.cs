@@ -62,16 +62,23 @@ namespace Application.Features.Teklifler.Commands
                 TeklifTarihi = request.TeklifTarihi,
                 GecerlilikTarihi = request.GecerlilikTarihi,
                 CurrencyId = request.CurrencyId,
-                Durum = QuoteStatus.Hazırlanıyor, // Yeni teklif her zaman bu durumla başlar.
+                Durum = Core.Domain.Enums.QuoteStatus.Sunuldu, // Yeni teklif her zaman bu durumla başlar.
                 IsActive = true,
                 TeklifNumarasi = await GenerateNewTeklifNumarasi() // Otomatik numara üreteceğiz.
             };
 
             decimal toplamTutar = 0;
 
-            // 2. Gelen DTO'lardan TeklifSatiri entity'lerini oluştur
+            // 2. Gelen DTO'lardan TeklifSatiri entity'lerini oluştur ve stokları rezerve et
             foreach (var satirDto in request.TeklifSatirlari)
             {
+                var product = await _unitOfWork.ProductRepository.GetByIdAsync(satirDto.UrunId);
+                if (product == null)
+                {
+                    // Bu durumun validator tarafından yakalanması gerekir, ancak burada da bir koruma katmanı olması iyidir.
+                    throw new Exception($"Ürün bulunamadı: ID {satirDto.UrunId}");
+                }
+
                 var toplam = satirDto.Miktar * satirDto.BirimFiyat;
                 yeniTeklif.TeklifSatirlari.Add(new TeklifSatiri
                 {
@@ -84,6 +91,10 @@ namespace Application.Features.Teklifler.Commands
                     Toplam = toplam
                 });
                 toplamTutar += toplam;
+
+                // Rezerve edilen miktarı artır
+                product.ReservedQuantity += (int)satirDto.Miktar;
+                _unitOfWork.ProductRepository.Update(product);
             }
 
             yeniTeklif.ToplamTutar = toplamTutar;

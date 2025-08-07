@@ -9,6 +9,8 @@ namespace Application.DTOs
         public int CurrencyId { get; set; }
         public string? CurrencyCode { get; set; }
         public int StockQuantity { get; set; }
+        public int ReservedQuantity { get; set; }
+        public int AvailableQuantity { get; set; }
         public string? SKU { get; set; }
         public bool IsActive { get; set; }
     }

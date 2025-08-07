@@ -3,6 +3,7 @@
 using Application.Features.Customers.Commands;
 using Application.Features.Customers.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
@@ -44,14 +45,18 @@ namespace API.Web.Controllers
         public async Task<IActionResult> Create(CreateCustomerCommand command)
         {
             var result = await _mediator.Send(command);
+
+            if (result == null || result.Customer == null)
+            {
+                return BadRequest("Müşteri oluşturulamadı.");
+            }
+
             return CreatedAtAction(nameof(GetById), new { id = result.Customer.Id }, result);
         }
 
         [HttpPatch("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCustomerCommand command)
         {
-            // Komutun ID'sini her zaman URL'den gelen ID ile ayarla.
-            // Bu, PATCH isteğinde body'de ID olmasa bile komutun doğru ID'ye sahip olmasını sağlar.
             if (command.Id != Guid.Empty && command.Id != id)
             {
                 return BadRequest("ID mismatch");

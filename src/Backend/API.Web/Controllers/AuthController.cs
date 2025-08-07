@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace API.Web.Controllers
 {
@@ -14,7 +16,14 @@ namespace API.Web.Controllers
             _mediator = mediator;
         }
 
-        // Bu Controller, gelecekte yetkilendirme ile ilgili özel endpoint'ler gerekirse diye boş olarak bırakılmıştır.
-        // Mevcut durumda tüm kimlik doğrulama işlemleri Supabase ve Frontend tarafından yönetilmektedir.
+        // --- TEŞHİS İÇİN GEÇİCİ ENDPOINT ---
+        // Bu endpoint, giriş yapmış kullanıcının JWT'sinden ayrıştırılan tüm kimlik bilgilerini (claim) gösterir.
+        // Bu, rollerin doğru bir şekilde eklenip eklenmediğini doğrulamamıza yardımcı olacaktır.
+        [HttpGet("claims")]
+        public IActionResult GetClaims()
+        {
+            var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            return Ok(claims);
+        }
     }
 }

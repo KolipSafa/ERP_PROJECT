@@ -1,6 +1,7 @@
 using Application.Features.Products.Commands;
 using Application.Features.Products.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -48,7 +49,7 @@ namespace API.Web.Controllers
         [HttpPatch("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductCommand command)
         {
-            command.Id = id; // URL'deki id'yi komuta ata, bu kontrolü daha güvenli hale getirir.
+            command.Id = id;
             
             var productDto = await _mediator.Send(command);
             return Ok(productDto);
@@ -58,7 +59,7 @@ namespace API.Web.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             await _mediator.Send(new DeleteProductCommand(id));
-            return NoContent(); // Başarılı silme için standart yanıt (204 No Content)
+            return NoContent();
         }
 
         [HttpDelete("hard/{id}")]

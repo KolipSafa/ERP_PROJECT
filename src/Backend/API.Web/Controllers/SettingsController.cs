@@ -3,6 +3,7 @@ using Application.Features.Settings.Companies.Queries;
 using Application.Features.Settings.Currencies.Commands;
 using Application.Features.Settings.Currencies.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;

@@ -12,6 +12,7 @@ namespace Core.Domain.Entities
         public int CurrencyId { get; set; }
         public Currency? Currency { get; set; }
         public int StockQuantity { get; set; }
+        public int ReservedQuantity { get; set; } = 0;
         public string? SKU { get; set; }
         public bool IsActive { get; set; } = true;
     }

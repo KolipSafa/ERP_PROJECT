@@ -12,6 +12,7 @@ namespace Core.Domain.Interfaces
         ITeklifRepository TeklifRepository { get; }
         ICurrencyRepository CurrencyRepository { get; }
         ICompanyRepository CompanyRepository { get; }
+        IInvoiceRepository InvoiceRepository { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

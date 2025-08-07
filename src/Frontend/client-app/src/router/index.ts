@@ -110,6 +110,18 @@ const router = createRouter({
       component: () => import('../views/customer/MyQuotesView.vue'),
       meta: {  roles: ['Customer'] }
     },
+    {
+      path: '/my-invoices',
+      name: 'my-invoices',
+      component: () => import('../views/customer/MyInvoicesView.vue'),
+      meta: { requiresAuth: true, roles: ['Customer'] }
+    },
+    {
+      path: '/invoices',
+      name: 'invoices',
+      component: () => import('../views/InvoicesView.vue'),
+      meta: { requiresAuth: true, roles: ['Admin'] }
+    },
   ],
 })
 
