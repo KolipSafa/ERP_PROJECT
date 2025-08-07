@@ -1,4 +1,5 @@
 using Application.DTOs;
+using Application.Interfaces;
 using AutoMapper;
 using Core.Domain.Interfaces;
 using MediatR;
@@ -14,11 +15,13 @@ namespace Application.Features.Customers.Queries
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ISupabaseAuthAdminService _supabaseService;
 
-        public GetCustomerByIdQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        public GetCustomerByIdQueryHandler(IUnitOfWork unitOfWork, IMapper mapper, ISupabaseAuthAdminService supabaseService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _supabaseService = supabaseService;
         }
 
         public async Task<CustomerDto?> Handle(GetCustomerByIdQuery request, CancellationToken cancellationToken)
@@ -32,9 +35,15 @@ namespace Application.Features.Customers.Queries
 
             var customerDto = _mapper.Map<CustomerDto>(customer);
 
-            // TODO: Müşterinin Supabase'deki hesap durumunu (EmailConfirmed)
-            // Supabase Admin API'si üzerinden sorgulayarak `IsAccountActive` alanını doldur.
-            customerDto.IsAccountActive = false; // Şimdilik varsayılan olarak false ayarlıyoruz.
+            if (customer.ApplicationUserId.HasValue)
+            {
+                var supabaseUser = await _supabaseService.GetUserById(customer.ApplicationUserId.Value.ToString(), cancellationToken);
+                customerDto.IsAccountActive = supabaseUser?.EmailConfirmedAt.HasValue ?? false;
+            }
+            else
+            {
+                customerDto.IsAccountActive = false;
+            }
 
             return customerDto;
         }

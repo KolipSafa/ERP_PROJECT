@@ -16,6 +16,7 @@ namespace Application.Features.Teklifler.Queries
     public class GetAllTekliflerQuery : IRequest<IEnumerable<TeklifDto>>
     {
         public Guid? MusteriId { get; set; }
+        public Guid? ApplicationUserId { get; set; }
         public DateTime? BaslangicTarihi { get; set; }
         public DateTime? BitisTarihi { get; set; }
         public QuoteStatus? Durum { get; set; }
@@ -42,6 +43,7 @@ namespace Application.Features.Teklifler.Queries
         {
             var teklifler = await _unitOfWork.TeklifRepository.GetAllAsync(
                 request.MusteriId,
+                request.ApplicationUserId,
                 request.BaslangicTarihi,
                 request.BitisTarihi,
                 request.Durum,

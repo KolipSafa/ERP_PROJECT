@@ -38,7 +38,7 @@ namespace API.Web.Controllers
         {
             if (User.IsInRole("Customer"))
             {
-                query.MusteriId = CurrentUserId;
+                query.ApplicationUserId = CurrentUserId;
             }
             
             var result = await _mediator.Send(query);

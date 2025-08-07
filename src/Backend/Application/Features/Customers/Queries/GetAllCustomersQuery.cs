@@ -1,8 +1,10 @@
 using Application.DTOs;
+using Application.Interfaces;
 using AutoMapper;
 using Core.Domain.Interfaces;
 using MediatR;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,11 +20,13 @@ namespace Application.Features.Customers.Queries
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ISupabaseAuthAdminService _supabaseService;
 
-        public GetAllCustomersQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        public GetAllCustomersQueryHandler(IUnitOfWork unitOfWork, IMapper mapper, ISupabaseAuthAdminService supabaseService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _supabaseService = supabaseService;
         }
 
         public async Task<IEnumerable<CustomerDto>> Handle(GetAllCustomersQuery request, CancellationToken cancellationToken)
@@ -35,13 +39,23 @@ namespace Application.Features.Customers.Queries
 
             var customerDtos = _mapper.Map<List<CustomerDto>>(customers);
 
-            // TODO: Müşterilerin Supabase'deki hesap durumunu (EmailConfirmed)
-            // Supabase Admin API'si üzerinden sorgulayarak `IsAccountActive` alanını doldur.
-            // Bu işlem, birden fazla müşteri için toplu bir sorgu ile yapılmalıdır.
-            foreach (var dto in customerDtos)
+            // TODO: Bu N+1 sorgu problemine neden olabilir. Çok sayıda müşteri olduğunda
+            // Supabase'den kullanıcıları toplu olarak getiren bir yöntem düşünülmelidir.
+            var tasks = customerDtos.Select(async (dto) =>
             {
-                dto.IsAccountActive = false; // Şimdilik varsayılan olarak false ayarlıyoruz.
-            }
+                var customer = customers.First(c => c.Id == dto.Id);
+                if (customer.ApplicationUserId.HasValue)
+                {
+                    var supabaseUser = await _supabaseService.GetUserById(customer.ApplicationUserId.Value.ToString(), cancellationToken);
+                    dto.IsAccountActive = supabaseUser?.EmailConfirmedAt.HasValue ?? false;
+                }
+                else
+                {
+                    dto.IsAccountActive = false;
+                }
+            });
+
+            await Task.WhenAll(tasks);
             
             return customerDtos;
         }

@@ -13,6 +13,7 @@ const API_URL = '/teklifler';
  */
 export interface TeklifFilterParams {
   musteriId?: string;
+  applicationUserId?: string;
   baslangicTarihi?: string;
   bitisTarihi?: string;
   durum?: number;

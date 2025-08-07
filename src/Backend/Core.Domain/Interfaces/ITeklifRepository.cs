@@ -21,6 +21,7 @@ namespace Core.Domain.Interfaces
         /// </summary>
         Task<IEnumerable<Teklif>> GetAllAsync(
             Guid? musteriId,
+            Guid? applicationUserId,
             DateTime? baslangicTarihi,
             DateTime? bitisTarihi,
             QuoteStatus? durum,

@@ -34,6 +34,7 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<IEnumerable<Teklif>> GetAllAsync(
             Guid? musteriId,
+            Guid? applicationUserId,
             DateTime? baslangicTarihi,
             DateTime? bitisTarihi,
             QuoteStatus? durum,
@@ -51,6 +52,10 @@ namespace Infrastructure.Persistence.Repositories
             if (musteriId.HasValue)
             {
                 query = query.Where(t => t.MusteriId == musteriId.Value);
+            }
+            if (applicationUserId.HasValue)
+            {
+                query = query.Where(t => t.Musteri.ApplicationUserId == applicationUserId.Value);
             }
             if (durum.HasValue)
             {

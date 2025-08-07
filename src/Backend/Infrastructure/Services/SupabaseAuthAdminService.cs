@@ -62,5 +62,24 @@ namespace Infrastructure.Services
                 throw new HttpRequestException($"Failed to update user metadata. Status: {response.StatusCode}, Response: {errorContent}");
             }
         }
+
+        public async Task<User?> GetUserById(string userId, CancellationToken cancellationToken = default)
+        {
+            var response = await _httpClient.GetAsync($"admin/users/{userId}", cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                var user = JsonSerializer.Deserialize<User>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return user;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Failed to get user {UserId}. Status: {StatusCode}, Response: {Response}", userId, response.StatusCode, errorContent);
+                // Return null instead of throwing an exception, as not finding a user might be an expected case.
+                return null;
+            }
+        }
     }
 }

@@ -7,6 +7,7 @@ namespace Application.Interfaces
 {
     public interface ISupabaseAuthAdminService
     {
+        Task<User?> GetUserById(string userId, CancellationToken cancellationToken = default);
         Task DeleteUser(string userId, CancellationToken cancellationToken = default);
         Task<User?> UpdateUserAppMetadata(string userId, Dictionary<string, object> metadata);
     }

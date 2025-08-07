@@ -80,7 +80,7 @@ const fetchTeklifler = async () => {
   try {
     // Sadece bu müşteriye ait teklifleri getirmek için filtreleme yapıyoruz.
     // Backend'in bu filtreyi desteklediğinden emin olmalıyız.
-    const response = await TeklifService.getAll({ musteriId: authStore.user?.id });
+    const response = await TeklifService.getAll({ applicationUserId: authStore.user?.id });
     teklifler.value = response.data;
   } catch (error) {
     console.error("Teklifler alınırken hata oluştu:", error);
