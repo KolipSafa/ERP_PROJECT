@@ -29,6 +29,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, configuration) => 
     configuration.ReadFrom.Configuration(context.Configuration));
 
+// Force Kestrel to bind to Render's PORT (default 10000)
+var renderPort = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+builder.WebHost.UseUrls($"http://0.0.0.0:{renderPort}");
+Log.Information("Binding Kestrel to http://0.0.0.0:{Port}", renderPort);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "_myAllowSpecificOrigins", policy =>
