@@ -17,8 +17,8 @@ WORKDIR /app
 COPY --from=build /app/out .
 
 # Listen on 8080 for Render
-ENV ASPNETCORE_URLS=http://0.0.0.0:${PORT:-8080}
-EXPOSE 8080
+ENV ASPNETCORE_URLS=http://0.0.0.0:${PORT:-10000}
+EXPOSE 10000
 
 ENTRYPOINT ["dotnet", "API.Web.dll"]
 
