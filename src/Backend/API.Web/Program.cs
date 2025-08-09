@@ -49,7 +49,10 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "My API", Version = "v1" });
 });
 
-var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled", builder.Environment.IsProduction());
+// Default off in Production; enable explicitly via Hangfire:Enabled=true
+var hangfireEnabled = builder.Configuration.GetValue<bool>("Hangfire:Enabled", false);
+// Auto-migrate DB only in Development by default (can enable via Database:AutoMigrate=true)
+var autoMigrate = builder.Configuration.GetValue<bool>("Database:AutoMigrate", builder.Environment.IsDevelopment());
 
 if (!builder.Environment.IsEnvironment("Test"))
 {
@@ -241,33 +244,33 @@ app.MapControllers();
 
 if (!app.Environment.IsEnvironment("Test"))
 {
-    if (hangfireEnabled)
+    if (hangfireEnabled && app.Environment.IsDevelopment())
     {
-        if (app.Environment.IsDevelopment())
+        try
         {
-            try
-            {
-                app.MapHangfireDashboard();
-            }
-            catch (Exception ex)
-            {
-                var errorLogger = app.Services.GetRequiredService<ILogger<Program>>();
-                errorLogger.LogError(ex, "Hangfire dashboard başlatılamadı. Geliştirme için skip ediliyor.");
-            }
+            app.MapHangfireDashboard();
+        }
+        catch (Exception ex)
+        {
+            var errorLogger = app.Services.GetRequiredService<ILogger<Program>>();
+            errorLogger.LogError(ex, "Hangfire dashboard başlatılamadı. Geliştirme için skip ediliyor.");
         }
     }
 
-    using var scope = app.Services.CreateScope();
-    var services = scope.ServiceProvider;
-    try
+    if (autoMigrate)
     {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        await context.Database.MigrateAsync();
-    }
-    catch (Exception ex)
-    {
-        var errorLogger = services.GetRequiredService<ILogger<Program>>();
-        errorLogger.LogError(ex, "Veritabanı migration sırasında bir hata oluştu.");
+        using var scope = app.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        try
+        {
+            var context = services.GetRequiredService<ApplicationDbContext>();
+            await context.Database.MigrateAsync();
+        }
+        catch (Exception ex)
+        {
+            var errorLogger = services.GetRequiredService<ILogger<Program>>();
+            errorLogger.LogError(ex, "Veritabanı migration sırasında bir hata oluştu.");
+        }
     }
 }
 
