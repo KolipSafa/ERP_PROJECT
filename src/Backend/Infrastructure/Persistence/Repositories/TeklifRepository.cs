@@ -106,6 +106,16 @@ namespace Infrastructure.Persistence.Repositories
             teklif.IsActive = false;
             _context.Teklifler.Update(teklif);
         }
+
+        public void HardDelete(Teklif teklif)
+        {
+            // Önce satırları sil, sonra teklifi
+            if (teklif.TeklifSatirlari != null)
+            {
+                _context.TeklifSatirlari.RemoveRange(teklif.TeklifSatirlari);
+            }
+            _context.Teklifler.Remove(teklif);
+        }
     }
 }
 

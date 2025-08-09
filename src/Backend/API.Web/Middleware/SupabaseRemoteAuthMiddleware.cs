@@ -14,6 +14,7 @@ namespace API.Web.Middleware
         private readonly string _apiKey;
         private readonly ILogger<SupabaseRemoteAuthMiddleware> _logger;
 
+
         public SupabaseRemoteAuthMiddleware(
             RequestDelegate next,
             IConfiguration configuration,

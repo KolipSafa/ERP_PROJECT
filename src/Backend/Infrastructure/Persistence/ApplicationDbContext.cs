@@ -67,6 +67,8 @@ namespace Infrastructure.Persistence
                 .HasForeignKey(t => t.CurrencyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Teklif ChangeRequestNotes uzun metin olabilir, özel config gerekmez ama burada not düşüyoruz.
+
             modelBuilder.Entity<Teklif>()
                 .HasOne(t => t.Musteri)
                 .WithMany()

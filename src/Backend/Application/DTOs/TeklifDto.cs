@@ -17,6 +17,7 @@ namespace Application.DTOs
         public string? CurrencyCode { get; set; }
         public string Durum { get; set; } = string.Empty; // Enum'ı string'e çevirerek göndereceğiz.
         public bool IsActive { get; set; }
+        public string? ChangeRequestNotes { get; set; }
         public List<TeklifSatiriDto> TeklifSatirlari { get; set; } = new List<TeklifSatiriDto>();
     }
 }

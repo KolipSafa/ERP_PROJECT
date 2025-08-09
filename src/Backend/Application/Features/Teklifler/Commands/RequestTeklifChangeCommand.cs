@@ -54,12 +54,14 @@ namespace Application.Features.Teklifler.Commands
                 throw new InvalidOperationException("Sadece 'Sunuldu' durumundaki teklifler için değişiklik talep edilebilir.");
             }
 
-            // Teklifin durumunu güncelle
+            // Teklifin durumunu ve notları güncelle
             teklif.Durum = QuoteStatus.ChangeRequested;
+            if (!string.IsNullOrWhiteSpace(request.ChangeRequest.Notes))
+            {
+                teklif.ChangeRequestNotes = request.ChangeRequest.Notes;
+            }
 
-            // TODO: Müşterinin notlarını veya satır değişiklik taleplerini
-            // veritabanında ayrı bir yere kaydetmek (örn: TeklifRevizyonları tablosu).
-            // Şimdilik sadece durumu güncelliyoruz. Bu, ileride geliştirilebilir.
+            // TODO: Gerekirse ileride revizyon geçmişi tablosu eklenebilir.
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }

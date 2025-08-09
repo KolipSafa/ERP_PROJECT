@@ -27,12 +27,11 @@ namespace Application.Mappings
                     opt => opt.MapFrom(src => src.Durum.ToString())
                 );
 
+            // Invoice -> InvoiceDto (tek tanım)
             CreateMap<Invoice, InvoiceDto>()
-                .ForMember(d => d.Status, opt => opt.MapFrom(s => (int)s.Status));
-
-            // Invoice -> InvoiceDto
-            CreateMap<Invoice, InvoiceDto>()
-                .ForMember(d => d.Status, opt => opt.MapFrom(s => (int)s.Status));
+                .ForMember(d => d.Status, opt => opt.MapFrom(s => (int)s.Status))
+                .ForMember(d => d.CustomerName, opt => opt.MapFrom(s => s.Customer != null ? ($"{s.Customer.FirstName} {s.Customer.LastName}") : null))
+                .ForMember(d => d.CompanyName, opt => opt.MapFrom(s => s.Customer != null && s.Customer.Company != null ? s.Customer.Company.Name : null));
         }
     }
 }

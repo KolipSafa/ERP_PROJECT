@@ -38,7 +38,18 @@ namespace Application.Features.Customers.Queries
             if (customer.ApplicationUserId.HasValue)
             {
                 var supabaseUser = await _supabaseService.GetUserById(customer.ApplicationUserId.Value.ToString(), cancellationToken);
-                customerDto.IsAccountActive = supabaseUser?.EmailConfirmedAt.HasValue ?? false;
+                var isEmailConfirmed = supabaseUser?.EmailConfirmedAt.HasValue ?? false;
+                var isAppMetaActive = false;
+                try
+                {
+                    if (supabaseUser?.AppMetadata != null && supabaseUser.AppMetadata.TryGetValue("status", out var statusObj))
+                    {
+                        var statusStr = statusObj?.ToString();
+                        isAppMetaActive = string.Equals(statusStr, "active", StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+                catch { /* ignore parsing issues */ }
+                customerDto.IsAccountActive = isEmailConfirmed || isAppMetaActive;
             }
             else
             {

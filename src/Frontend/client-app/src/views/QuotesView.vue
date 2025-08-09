@@ -10,6 +10,8 @@ import debounce from 'lodash.debounce';
 const router = useRouter();
 const notifier = useNotifier();
 const teklifler = ref<TeklifDto[]>([]);
+const expanded = ref<string[]>([]);
+const detailsMap = ref(new Map<string, TeklifDto>());
 const customers = ref<CustomerDto[]>([]);
 const loading = ref(true);
 
@@ -63,25 +65,46 @@ const statusOptions = [
   { title: 'Değişiklik Talep Edildi', value: 3 },
 ];
 
-const getStatusText = (statusValue: number) => {
+const statusTextByString: Record<string, string> = {
+  Sunuldu: 'Sunuldu',
+  Onaylandı: 'Onaylandı',
+  Reddedildi: 'Reddedildi',
+  ChangeRequested: 'Değişiklik Talep Edildi'
+};
+
+const statusColorByString: Record<string, string> = {
+  Sunuldu: 'info',
+  Onaylandı: 'success',
+  Reddedildi: 'error',
+  ChangeRequested: 'orange'
+};
+
+const getStatusText = (statusValue: string | number) => {
+  if (typeof statusValue === 'string') {
+    return statusTextByString[statusValue] ?? 'Bilinmeyen';
+  }
   const status = statusOptions.find(s => s.value === statusValue);
   return status ? status.title : 'Bilinmeyen';
 };
 
-const getStatusColor = (statusValue: number) => {
+const getStatusColor = (statusValue: string | number) => {
+  if (typeof statusValue === 'string') {
+    return statusColorByString[statusValue] ?? 'grey';
+  }
   switch (statusValue) {
-    case 0: return 'info'; // Sunuldu
-    case 1: return 'success'; // Onaylandı
-    case 2: return 'error'; // Reddedildi
-    case 3: return 'orange'; // Değişiklik Talep Edildi
+    case 0: return 'info';
+    case 1: return 'success';
+    case 2: return 'error';
+    case 3: return 'orange';
     default: return 'grey';
   }
 };
 
 const headers: any[] = [
-  { title: 'Teklif Numarası', key: 'teklifNumarasi' },
+  { title: 'Teklif No', key: 'teklifNumarasi' },
   { title: 'Müşteri', key: 'musteriAdi' },
-  { title: 'Teklif Tarihi', key: 'teklifTarihi' },
+  { title: 'Tarih', key: 'teklifTarihi' },
+  { title: 'Kalemler', key: 'items' },
   { title: 'Tutar', key: 'toplamTutar', align: 'end' },
   { title: 'Durum', key: 'durum', align: 'center' },
   { title: 'Aktif', key: 'isActive', align: 'center' },
@@ -124,6 +147,19 @@ onMounted(() => {
   fetchTeklifler();
 });
 
+watch(expanded, async (newVal, oldVal) => {
+  const prev = Array.isArray(oldVal) ? oldVal : [];
+  const opened = newVal.find(id => !prev.includes(id));
+  if (opened && !detailsMap.value.has(opened)) {
+    try {
+      const res = await TeklifService.getById(opened);
+      detailsMap.value.set(opened, res.data);
+    } catch (e) {
+      console.error('Teklif detay alınamadı', e);
+    }
+  }
+});
+
 watch(filters, debounce(fetchTeklifler, 400), { deep: true });
 watch(selectedSort, (newSortValue) => {
   filters.value.SortBy = newSortValue.SortBy;
@@ -162,6 +198,18 @@ const archiveTeklif = async () => {
     fetchTeklifler(); // Listeyi yenile
   } catch (error) {
     notifier.error('Teklif arşivlenirken bir hata oluştu.', { autoClose: 4000 });
+    console.error(error);
+  }
+};
+
+const hardDelete = async () => {
+  if (!selectedTeklif.value) return;
+  try {
+    await TeklifService.hardDelete(selectedTeklif.value.id);
+    notifier.warn(`'${selectedTeklif.value.teklifNumarasi}' KALICI olarak silindi.`, { autoClose: 4000 });
+    fetchTeklifler();
+  } catch (error) {
+    notifier.error('Teklif kalıcı silinirken bir hata oluştu.', { autoClose: 4000 });
     console.error(error);
   }
 };
@@ -238,6 +286,8 @@ const formatCurrency = (value: number, currencyCode: string = 'TRY') => {
           item-value="id"
           fixed-header
           height="65vh"
+          show-expand
+          v-model:expanded="expanded"
         >
           <template v-slot:item.teklifTarihi="{ item }">
             <span>{{ formatDate(item.teklifTarihi) }}</span>
@@ -247,6 +297,14 @@ const formatCurrency = (value: number, currencyCode: string = 'TRY') => {
           </template>
           <template v-slot:item.durum="{ item }">
             <v-chip :color="getStatusColor(item.durum)" size="small">{{ getStatusText(item.durum) }}</v-chip>
+          </template>
+          <template v-slot:item.items="{ item }">
+            <div>
+              <div v-for="line in (item.teklifSatirlari || []).slice(0,3)" :key="line.id" class="text-caption">
+                - {{ line.urunAdi }} x {{ line.miktar }}
+              </div>
+              <div v-if="(item.teklifSatirlari || []).length > 3" class="text-caption">…</div>
+            </div>
           </template>
           <template v-slot:item.isActive="{ item }">
             <v-chip :color="item.isActive ? 'green' : 'red'" size="small">{{ item.isActive ? 'Aktif' : 'Pasif' }}</v-chip>
@@ -264,6 +322,7 @@ const formatCurrency = (value: number, currencyCode: string = 'TRY') => {
                   <v-list-item-title>{{ status.title }}</v-list-item-title>
                 </v-list-item>
                 <v-divider class="my-2"></v-divider>
+                <v-list-subheader>İşlemler</v-list-subheader>
                 <v-list-item v-if="item.isActive" @click="openDialog({ title: 'Teklifi Arşivle', message: `<strong>${item.teklifNumarasi}</strong> numaralı teklifi arşive göndermek istediğinize emin misiniz?`, color: 'warning', teklif: item, onConfirm: archiveTeklif })">
                   <template v-slot:prepend><v-icon color="warning">mdi-archive-arrow-down</v-icon></template>
                   <v-list-item-title>Arşivle</v-list-item-title>
@@ -272,8 +331,51 @@ const formatCurrency = (value: number, currencyCode: string = 'TRY') => {
                   <template v-slot:prepend><v-icon color="success">mdi-restore</v-icon></template>
                   <v-list-item-title>Geri Yükle</v-list-item-title>
                 </v-list-item>
+                <v-list-item @click="openDialog({ title: 'KALICI SİL', message: `<strong>UYARI:</strong> <strong>${item.teklifNumarasi}</strong> numaralı teklifi kalıcı olarak sileceksiniz. <strong>Geri alınamaz!</strong>`, color: 'error', teklif: item, onConfirm: hardDelete })">
+                  <template v-slot:prepend><v-icon color="error">mdi-delete-forever</v-icon></template>
+                  <v-list-item-title class="text-error">Kalıcı Sil</v-list-item-title>
+                </v-list-item>
               </v-list>
             </v-menu>
+          </template>
+          <template v-slot:expanded-row="{ item, columns }">
+            <tr>
+              <td :colspan="columns.length">
+                <v-card flat class="pa-3">
+                  <div class="d-flex align-center mb-2">
+                    <v-chip :color="getStatusColor(item.durum)" size="small" class="mr-2">{{ getStatusText(item.durum) }}</v-chip>
+                  </div>
+                  <div v-if="(detailsMap.get(item.id)?.changeRequestNotes || item.changeRequestNotes)" class="mb-3">
+                    <v-alert type="info" variant="tonal" density="compact" border="start" border-color="info">
+                      {{ detailsMap.get(item.id)?.changeRequestNotes || item.changeRequestNotes }}
+                    </v-alert>
+                  </div>
+                  <div class="text-subtitle-1 mb-2">Kalemler</div>
+                  <v-table density="compact">
+                    <thead>
+                      <tr>
+                        <th class="text-left">Ürün</th>
+                        <th class="text-right">Miktar</th>
+                        <th class="text-right">Birim Fiyat</th>
+                        <th class="text-right">Toplam</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="line in (detailsMap.get(item.id)?.teklifSatirlari || item.teklifSatirlari || [])" :key="line.id">
+                        <td>{{ line.urunAdi }}</td>
+                        <td class="text-right">{{ line.miktar }}</td>
+                        <td class="text-right">{{ line.birimFiyat?.toLocaleString('tr-TR') }}</td>
+                        <td class="text-right">{{ line.toplam?.toLocaleString('tr-TR') }}</td>
+                      </tr>
+                    </tbody>
+                  </v-table>
+                  <div class="d-flex justify-end mt-2">
+                    <strong>Genel Toplam:&nbsp;</strong>
+                    <span>{{ formatCurrency(item.toplamTutar, item.currencyCode) }}</span>
+                  </div>
+                </v-card>
+              </td>
+            </tr>
           </template>
         </v-data-table>
       </v-card-text>

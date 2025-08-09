@@ -30,6 +30,7 @@ export interface TeklifDto {
   currencyCode?: string;
   durum: string | number; // Enum'ın string hali veya sayısal değeri
   isActive: boolean;
+  changeRequestNotes?: string;
   teklifSatirlari: TeklifSatiriDto[];
 }
 

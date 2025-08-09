@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Supabase.Gotrue; // User nesnesi için
@@ -43,7 +44,7 @@ namespace Infrastructure.Services
         public async Task<User?> UpdateUserAppMetadata(string userId, Dictionary<string, object> metadata)
         {
             var requestBody = new { app_metadata = metadata };
-            var json = JsonSerializer.Serialize(requestBody);
+            var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             
             var response = await _httpClient.PutAsync($"admin/users/{userId}", content);
@@ -51,7 +52,8 @@ namespace Infrastructure.Services
             if (response.IsSuccessStatusCode)
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
-                var updatedUser = JsonSerializer.Deserialize<User>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                // Newtonsoft kullan: Supabase.Gotrue.User sınıfındaki Newtonsoft attribute'larıyla snake_case maplensin
+                var updatedUser = JsonConvert.DeserializeObject<User>(responseContent);
                 _logger.LogInformation("Successfully updated app_metadata for user {UserId}.", userId);
                 return updatedUser;
             }
@@ -70,7 +72,8 @@ namespace Infrastructure.Services
             if (response.IsSuccessStatusCode)
             {
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                var user = JsonSerializer.Deserialize<User>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                // Newtonsoft kullan: snake_case alanlar doğru şekilde eşleşsin (email_confirmed_at, app_metadata, vs.)
+                var user = JsonConvert.DeserializeObject<User>(responseContent);
                 return user;
             }
             else

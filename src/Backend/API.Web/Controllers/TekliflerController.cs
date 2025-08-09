@@ -1,5 +1,6 @@
 using Application.Features.Teklifler.Commands;
 using Application.Features.Teklifler.Queries;
+using Application.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -51,20 +52,30 @@ namespace API.Web.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var query = new GetTeklifByIdQuery(id);
-            var result = await _mediator.Send(query);
+            var isCustomer = User.IsInRole("Customer");
+            Guid? currentUserId = null;
+            if (isCustomer)
+            {
+                var sub = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (Guid.TryParse(sub, out var parsed)) currentUserId = parsed;
+            }
+
+            var query = new GetTeklifByIdQuery(id, currentUserId, isCustomer);
+            TeklifDto? result;
+            try
+            {
+                result = await _mediator.Send(query);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
             
             if (result == null)
             {
                 return NotFound($"ID'si {id} olan teklif bulunamadı.");
             }
 
-            // If the user is a customer, ensure they can only access their own quotes.
-            if (User.IsInRole("Customer") && result.MusteriId != CurrentUserId)
-            {
-                return Forbid();
-            }
-            
             return Ok(result);
         }
 
@@ -96,11 +107,25 @@ namespace API.Web.Controllers
             return NoContent();
         }
 
+        [HttpDelete("hard/{id}")]
+        public async Task<IActionResult> HardDelete(Guid id)
+        {
+            await _mediator.Send(new HardDeleteTeklifCommand(id));
+            return NoContent();
+        }
+
         [HttpPost("{id}/restore")]
         public async Task<IActionResult> Restore(Guid id)
         {
             var command = new RestoreTeklifCommand(id);
             await _mediator.Send(command);
+            return NoContent();
+        }
+
+        [HttpPost("{id}/resend")]
+        public async Task<IActionResult> Resend(Guid id)
+        {
+            await _mediator.Send(new ResendTeklifCommand(id));
             return NoContent();
         }
         

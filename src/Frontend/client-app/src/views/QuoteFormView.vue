@@ -16,6 +16,7 @@ import type { ProductDto } from '@/services/ProductService';
 import type { CurrencyDto } from '@/services/dtos/CurrencyDto';
 import debounce from 'lodash.debounce';
 import { useNotifier } from '@/composables/useNotifier';
+import TeklifApi from '@/services/TeklifService';
 
 const route = useRoute();
 const router = useRouter();
@@ -46,18 +47,19 @@ const selectedProduct = ref<ProductDto | null>(null);
 // Düzenleme modunda, orijinal teklif satır miktarlarını ürün bazında tutar (çifte düşümü önlemek için)
 const originalProductQtyMap = ref<Map<number, number>>(new Map());
 
+// Backend enum sırası: Sunuldu=0, Onaylandı=1, Reddedildi=2, ChangeRequested=3
 const statusStringMap: { [key: string]: number } = {
-  'Hazırlanıyor': 0,
-  'Sunuldu': 1,
-  'Onaylandı': 2,
-  'Reddedildi': 3,
+  'Sunuldu': 0,
+  'Onaylandı': 1,
+  'Reddedildi': 2,
+  'ChangeRequested': 3,
 };
 
 const statusOptions = [
-  { title: 'Hazırlanıyor', value: 0 },
-  { title: 'Sunuldu', value: 1 },
-  { title: 'Onaylandı', value: 2 },
-  { title: 'Reddedildi', value: 3 },
+  { title: 'Sunuldu', value: 0 },
+  { title: 'Onaylandı', value: 1 },
+  { title: 'Reddedildi', value: 2 },
+  { title: 'Değişiklik Talep Edildi', value: 3 },
 ];
 
 const loading = ref(false);
@@ -285,12 +287,33 @@ async function handleUpdate() {
   // notifier.success('Teklif başarıyla güncellendi.', { autoClose: 6000 }); // Bu satır yukarı taşındı.
 }
 
+async function resendQuote() {
+  if (!quoteId.value) return;
+  try {
+    // Önce formdaki değişiklikleri kaydet
+    await handleUpdate();
+    // Ardından durumu Sunuldu yap
+    await TeklifApi.resend(quoteId.value);
+    notifier.success('Teklif tekrar sunuldu.', { autoClose: 3000 });
+    router.push({ name: 'quotes' });
+  } catch (e) {
+    notifier.error('Tekrar sunma sırasında hata oluştu.', { autoClose: 4000 });
+    console.error(e);
+  }
+}
+
 </script>
 
 <template>
   <v-container fluid>
     <v-card :loading="loading">
-      <v-card-title>{{ pageTitle }}</v-card-title>
+  <v-card-title class="d-flex align-center">
+        <span>{{ pageTitle }}</span>
+        <v-spacer></v-spacer>
+    <v-btn v-if="isEditMode && (Number(teklifDurum) === 3)" color="info" @click="resendQuote">
+          Tekrar Sun
+        </v-btn>
+      </v-card-title>
       <v-divider></v-divider>
       <v-card-text>
         <v-alert v-if="errorMessage" type="error" dense class="mb-4" closable @click:close="errorMessage = ''">
@@ -433,7 +456,7 @@ async function handleUpdate() {
           <div class="d-flex">
             <v-spacer></v-spacer>
             <v-btn @click="router.push('/quotes')">İptal</v-btn>
-            <v-btn type="submit" color="primary" class="ml-2" :loading="loading">
+            <v-btn v-if="!(isEditMode && teklifDurum === 3)" type="submit" color="primary" class="ml-2" :loading="loading">
               Kaydet
             </v-btn>
           </div>

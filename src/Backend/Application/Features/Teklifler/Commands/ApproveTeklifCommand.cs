@@ -91,6 +91,14 @@ namespace Application.Features.Teklifler.Commands
 
             _unitOfWork.InvoiceRepository.Add(invoice);
 
+            // 3.1. Müşteri bakiyesini artır (cari borç). Fatura gönderildiği anda alacak oluşur.
+            var customer = await _unitOfWork.CustomerRepository.GetByIdAsync(teklif.MusteriId);
+            if (customer != null)
+            {
+                customer.Balance += invoice.TotalAmount;
+                _unitOfWork.CustomerRepository.Update(customer);
+            }
+
             // 4. Tüm değişiklikleri tek bir transaction'da kaydet
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }

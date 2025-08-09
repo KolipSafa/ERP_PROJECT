@@ -16,6 +16,12 @@
           <template v-slot:item.invoiceDate="{ item }">
             <span>{{ new Date(item.invoiceDate).toLocaleDateString() }}</span>
           </template>
+          <template v-slot:item.customerName="{ item }">
+            <span>{{ item.customerName || '-' }}</span>
+          </template>
+          <template v-slot:item.companyName="{ item }">
+            <span>{{ item.companyName || '-' }}</span>
+          </template>
           <template v-slot:item.dueDate="{ item }">
             <span>{{ new Date(item.dueDate).toLocaleDateString() }}</span>
           </template>
@@ -47,7 +53,8 @@ const loading = ref(true);
 
 const headers = [
   { title: 'Fatura No', key: 'invoiceNumber' },
-  { title: 'Müşteri Adı', key: 'customerName' },
+  { title: 'Müşteri', key: 'customerName' },
+  { title: 'Şirket', key: 'companyName' },
   { title: 'Fatura Tarihi', key: 'invoiceDate' },
   { title: 'Vade Tarihi', key: 'dueDate' },
   { title: 'Tutar', key: 'totalAmount', align: 'end' },

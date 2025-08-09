@@ -77,11 +77,22 @@ class TeklifService {
   }
 
   /**
+   * Bir teklifi KALICI olarak siler.
+   */
+  hardDelete(id: string) {
+    return apiClient.delete(`${API_URL}/hard/${id}`);
+  }
+
+  /**
    * Arşivlenmiş bir teklifi geri yükler.
    * @param id Geri yüklenecek teklifin ID'si
    */
   restore(id: string) {
     return apiClient.post(`${API_URL}/${id}/restore`);
+  }
+
+  resend(id: string) {
+    return apiClient.post(`${API_URL}/${id}/resend`);
   }
 
   // --- Müşteri Aksiyonları ---

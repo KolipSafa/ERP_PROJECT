@@ -14,10 +14,14 @@ namespace Application.Features.Teklifler.Queries
     public class GetTeklifByIdQuery : IRequest<TeklifDto?>
     {
         public Guid Id { get; set; }
+        public Guid? CurrentUserId { get; set; }
+        public bool IsCustomer { get; set; }
 
-        public GetTeklifByIdQuery(Guid id)
+        public GetTeklifByIdQuery(Guid id, Guid? currentUserId = null, bool isCustomer = false)
         {
             Id = id;
+            CurrentUserId = currentUserId;
+            IsCustomer = isCustomer;
         }
     }
 
@@ -42,6 +46,17 @@ namespace Application.Features.Teklifler.Queries
             if (teklif == null)
             {
                 return null; // Teklif bulunamazsa null dön. Controller bunu 404 Not Found olarak yorumlayacak.
+            }
+
+            // Müşteri ise sadece kendi teklifini görsün
+            if (request.IsCustomer && request.CurrentUserId.HasValue)
+            {
+                var cust = teklif.Musteri;
+                if (cust?.ApplicationUserId != request.CurrentUserId.Value)
+                {
+                    // Yetkisiz erişim → Controller katmanında 403 döneceğiz (null yerine özel işaret)
+                    throw new UnauthorizedAccessException("Bu teklif üzerinde görüntüleme yetkiniz yok.");
+                }
             }
 
             // AutoMapper, bizim için Teklif entity'sini, satırları ve diğer tüm ilişkili

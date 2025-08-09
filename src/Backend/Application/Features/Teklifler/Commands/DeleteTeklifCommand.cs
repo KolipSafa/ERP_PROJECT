@@ -39,13 +39,13 @@ namespace Application.Features.Teklifler.Commands
                 throw new NotFoundException(nameof(Teklif), request.Id);
             }
 
-            // Rezerve edilen miktarları serbest bırak
+            // Rezerve edilen miktarları serbest bırak (stok düşme yok, çünkü onaylanmadan siliniyor)
             foreach (var satir in teklifToDelete.TeklifSatirlari)
             {
                 var product = await _unitOfWork.ProductRepository.GetByIdAsync(satir.UrunId);
                 if (product != null)
                 {
-                    product.ReservedQuantity -= (int)satir.Miktar;
+                    product.ReservedQuantity = Math.Max(0, product.ReservedQuantity - (int)satir.Miktar);
                     _unitOfWork.ProductRepository.Update(product);
                 }
             }

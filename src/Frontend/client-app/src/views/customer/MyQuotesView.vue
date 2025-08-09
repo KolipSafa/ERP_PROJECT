@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import TeklifService from '@/services/TeklifService'
 import type { TeklifDto } from '@/services/dtos/TeklifDtos'
 import { useAuthStore } from '@/stores/auth.store'
@@ -26,20 +26,35 @@ const revisionNotes = ref('')
 
 // --- Data Table Headers ---
 const headers: any[] = [
+  { title: '', key: 'data-table-expand' },
   { title: 'Teklif No', key: 'teklifNumarasi' },
   { title: 'Tarih', key: 'teklifTarihi' },
   { title: 'Geçerlilik', key: 'gecerlilikTarihi' },
-  { title: 'Kalemler', key: 'items' },
   { title: 'Tutar', key: 'toplamTutar', align: 'end' },
   { title: 'Durum', key: 'durum', align: 'center' },
   { title: 'Eylemler', key: 'actions', sortable: false, align: 'center' },
 ]
+const expanded = ref<string[]>([])
+const detailsMap = ref(new Map<string, TeklifDto>())
 
 // --- Lifecycle Hooks ---
 onMounted(async () => {
   // Auth state'in hazır olduğundan emin ol
   await authStore.fetchUser()
   await fetchTeklifler()
+})
+
+watch(expanded, async (newVal, oldVal) => {
+  const prev = Array.isArray(oldVal) ? oldVal : []
+  const opened = newVal.find(id => !prev.includes(id))
+  if (opened && !detailsMap.value.has(opened)) {
+    try {
+      const res = await TeklifService.getById(opened)
+      detailsMap.value.set(opened, res.data)
+    } catch (e) {
+      console.error('Teklif detay alınamadı', e)
+    }
+  }
 })
 
 // --- Data Fetching ---
@@ -157,6 +172,8 @@ const getStatusColor = (status: string | number) => {
           :items="teklifler"
           :loading="loading"
           item-value="id"
+          show-expand
+          v-model:expanded="expanded"
           no-data-text="Henüz size atanmış bir teklif bulunmuyor."
         >
           <template v-slot:item.teklifTarihi="{ item }">
@@ -174,13 +191,46 @@ const getStatusColor = (status: string | number) => {
             </v-chip>
           </template>
 
-          <template v-slot:item.items="{ item }">
-            <div>
-              <div v-for="line in (item.teklifSatirlari || []).slice(0,2)" :key="line.id" class="text-caption">
-                - {{ line.urunAdi }} x {{ line.miktar }}
-              </div>
-              <div v-if="(item.teklifSatirlari || []).length > 2" class="text-caption">…</div>
-            </div>
+          <template v-slot:expanded-row="{ item, columns }">
+            <tr>
+              <td :colspan="columns.length">
+                <v-card flat class="pa-3">
+                  <div class="d-flex align-center mb-2">
+                    <v-chip :color="getStatusColor(item.durum)" size="small" class="mr-2">
+                      {{ getStatusText(item.durum) }}
+                    </v-chip>
+                  </div>
+                  <div v-if="(detailsMap.get(item.id)?.changeRequestNotes || item.changeRequestNotes)" class="mb-3">
+                    <v-alert type="info" variant="tonal" density="compact" border="start" border-color="info">
+                      {{ detailsMap.get(item.id)?.changeRequestNotes || item.changeRequestNotes }}
+                    </v-alert>
+                  </div>
+                  <div class="text-subtitle-1 mb-2">Kalemler</div>
+                  <v-table density="compact">
+                    <thead>
+                      <tr>
+                        <th class="text-left">Ürün</th>
+                        <th class="text-right">Miktar</th>
+                        <th class="text-right">Birim Fiyat</th>
+                        <th class="text-right">Toplam</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="line in (detailsMap.get(item.id)?.teklifSatirlari || item.teklifSatirlari || [])" :key="line.id">
+                        <td>{{ line.urunAdi }}</td>
+                        <td class="text-right">{{ line.miktar }}</td>
+                        <td class="text-right">{{ line.birimFiyat?.toLocaleString('tr-TR') }}</td>
+                        <td class="text-right">{{ line.toplam?.toLocaleString('tr-TR') }}</td>
+                      </tr>
+                    </tbody>
+                  </v-table>
+                  <div class="d-flex justify-end mt-2">
+                    <strong>Genel Toplam:&nbsp;</strong>
+                    <span>{{ formatCurrency(item.toplamTutar, item.currencyCode) }}</span>
+                  </div>
+                </v-card>
+              </td>
+            </tr>
           </template>
 
           <template v-slot:item.actions="{ item }">

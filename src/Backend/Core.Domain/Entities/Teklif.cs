@@ -22,6 +22,7 @@ namespace Core.Domain.Entities
         public Currency? Currency { get; set; }
         public QuoteStatus Durum { get; set; }
         public bool IsActive { get; set; } = true;
+        public string? ChangeRequestNotes { get; set; }
         
         public ICollection<TeklifSatiri> TeklifSatirlari { get; set; } = new List<TeklifSatiri>();
     }

@@ -47,5 +47,10 @@ namespace Core.Domain.Interfaces
         /// Kaydetme işlemi IUnitOfWork.SaveChangesAsync() ile yapılır.
         /// </summary>
         void Delete(Teklif teklif);
+
+        /// <summary>
+        /// İlgili teklifi ve satırlarını veritabanından kalıcı olarak siler.
+        /// </summary>
+        void HardDelete(Teklif teklif);
     }
 }

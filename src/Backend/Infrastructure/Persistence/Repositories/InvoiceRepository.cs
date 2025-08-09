@@ -23,13 +23,14 @@ namespace Infrastructure.Persistence.Repositories
             return await _context.Invoices
                 .Include(i => i.InvoiceLines)
                 .ThenInclude(l => l.Product)
-                .Include(i => i.Customer)
+                .Include(i => i.Customer)!.ThenInclude(c => c.Company)
                 .FirstOrDefaultAsync(i => i.Id == id);
         }
 
         public async Task<IEnumerable<Invoice>> GetAllByCustomerIdAsync(Guid customerId)
         {
             return await _context.Invoices
+                .Include(i => i.Customer)!.ThenInclude(c => c.Company)
                 .Where(i => i.CustomerId == customerId)
                 .OrderByDescending(i => i.InvoiceDate)
                 .ToListAsync();
@@ -44,7 +45,7 @@ namespace Infrastructure.Persistence.Repositories
         {
             return await _context.Invoices
                 .Include(i => i.InvoiceLines)
-                .Include(i => i.Customer)
+                .Include(i => i.Customer)!.ThenInclude(c => c.Company)
                 .OrderByDescending(i => i.InvoiceDate)
                 .ToListAsync();
         }

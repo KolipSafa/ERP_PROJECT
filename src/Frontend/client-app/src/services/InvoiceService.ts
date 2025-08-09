@@ -4,6 +4,8 @@ import apiClient from './axios';
 export interface InvoiceDto {
   id: string;
   invoiceNumber: string;
+  customerId?: string;
+  companyName?: string;
   customerName: string;
   invoiceDate: string;
   dueDate: string;
