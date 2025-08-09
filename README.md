@@ -1,102 +1,112 @@
-# ERP Projesi Kurulum Rehberi
+# ERP Project – Setup & Deployment Guide (EN)
 
-Bu rehber, ERP projesini yerel geliştirme ortamınızda kurmak ve çalıştırmak için gerekli adımları içermektedir. Proje, bir .NET 9 Backend API ve bir Vue.js Frontend uygulamasından oluşmaktadır.
+Modern ERP sample using .NET 9 (Clean Architecture) + Vue 3 + Supabase (Postgres + Auth).
 
-## 1. Ön Gereksinimler
+## Tech Stack
+- Backend: .NET 9, ASP.NET Core, EF Core (Npgsql), MediatR, AutoMapper, Serilog
+- Frontend: Vue 3, Vite, TypeScript, Pinia, Vuetify
+- Infra: Supabase (Postgres, Auth, Edge Functions), Render (API), Vercel (Web)
 
-Projeyi çalıştırmadan önce sisteminizde aşağıdaki araçların kurulu olduğundan emin olun:
+## Repository Structure
+- `src/Backend/` – API (`API.Web`), Application, Domain, Infrastructure
+- `src/Frontend/client-app/` – Vue app
+- `supabase/` – Edge functions and config
 
-- **.NET 9 SDK:** Backend'i derlemek ve çalıştırmak için gereklidir.
-- **Node.js (LTS sürümü önerilir):** Frontend uygulamasının bağımlılıklarını yönetmek ve çalıştırmak için gereklidir.
-- **SQL Server (Express veya Developer sürümü):** Veritabanı için gereklidir. Proje, `appsettings.json` dosyasında belirtilen bağlantı dizesini kullanarak bir veritabanına erişmeye çalışacaktır.
+## Prerequisites
+- .NET 9 SDK
+- Node.js LTS (18+)
+- Supabase project (URL + keys)
 
-## 2. Kurulum Adımları
+## Local Setup
 
-### Backend Kurulumu (.NET)
+### Backend (.NET)
+1) Restore & build
+```bash
+dotnet restore
+dotnet build src/Backend/API.Web/API.Web.csproj
+```
 
-1.  **Bağımlılıkları Yükleyin:**
-    Projenin kök dizinindeyken aşağıdaki komutu çalıştırarak .NET bağımlılıklarını (NuGet paketleri) yükleyin:
+2) Create local config from example
+```bash
+cp src/Backend/API.Web/appsettings.Development.json.example src/Backend/API.Web/appsettings.Development.json
+```
+Fill placeholders (Postgres connection string, Supabase URL/keys). See Environment variables section.
 
-    ```bash
-    dotnet restore src/Backend/ERP.sln
-    ```
+3) Apply migrations (Postgres)
+```bash
+dotnet ef database update \
+  --project src/Backend/Infrastructure \
+  --startup-project src/Backend/API.Web
+```
 
-2.  **Veritabanı Yapılandırması:**
-    Backend projesinin veritabanı bağlantı bilgilerini yapılandırmanız gerekmektedir.
+4) Run API
+```bash
+dotnet run --project src/Backend/API.Web/API.Web.csproj
+```
+API will listen at `https://localhost:7277` and `http://localhost:5245`.
 
-    -   `src/Backend/API.Web/` dizininde bulunan `appsettings.Development.json.example` dosyasını kopyalayın ve kopyanın adını `appsettings.Development.json` olarak değiştirin.
-    -   Oluşturduğunuz `appsettings.Development.json` dosyasını açın ve içerisindeki `ConnectionStrings` bölümünü kendi SQL Server yapılandırmanıza göre düzenleyin.
+### Frontend (Vue)
+```bash
+cd src/Frontend/client-app
+npm install
+npm run dev
+```
+Vite dev server runs at `http://localhost:5173`.
 
-        ```json
-        "ConnectionStrings": {
-          "DefaultConnection": "Server=YOUR_SERVER_NAME;Database=ERP_DB;Trusted_Connection=True;TrustServerCertificate=True;"
-        }
-        ```
+## Environment Variables (Public repo – never commit secrets)
 
-3.  **Veritabanını Oluşturun ve Güncelleyin:**
-    Entity Framework Core migration'larını uygulayarak veritabanını oluşturun ve şemayı en son sürüme güncelleyin.
+Backend (use environment variables in hosting or local user-secrets)
+- `ConnectionStrings__DefaultConnection` – Postgres conn string (e.g. Supabase Session Pooler)
+- `Supabase__Url` – `https://<PROJECT-REF>.supabase.co`
+- `Supabase__ServiceRoleKey` – service_role key (backend only)
+- `Supabase__AnonKey` – anon key (optional)
+- `Jwt__Authority` – `https://<PROJECT-REF>.supabase.co/auth/v1`
+- `Jwt__Audience` – `authenticated`
 
-    ```bash
-    dotnet ef database update --project src/Backend/Infrastructure --startup-project src/Backend/API.Web
-    ```
-
-4.  **Backend API'sini Çalıştırın:**
-    Aşağıdaki komut ile API'yi başlatın:
-
-    ```bash
-    dotnet run --project src/Backend/API.Web/API.Web.csproj
-    ```
-
-    API, varsayılan olarak **`https://localhost:7277`** ve **`http://localhost:5245`** adreslerinde çalışmaya başlayacaktır.
-
-### Frontend Kurulumu (Vue.js)
-
-1.  **Frontend Dizinine Geçin:**
-    Yeni bir terminal açın ve frontend projesinin dizinine gidin:
-
-    ```bash
-    cd src/Frontend/client-app
-    ```
-
-2.  **Bağımlılıkları Yükleyin:**
-    `package.json` dosyasında listelenen Node.js bağımlılıklarını yüklemek için aşağıdaki komutu çalıştırın:
-
-    ```bash
-    npm install
-    ```
-
-3.  **Frontend Uygulamasını Çalıştırın:**
-    Vite geliştirme sunucusunu başlatın:
-
-    ```bash
-    npm run dev
-    ```
-
-    Uygulama, genellikle **`http://localhost:5173`** adresinde çalışmaya başlayacak ve tarayıcınızda otomatik olarak açılacaktır.
-
-## 3. Projeyi Kullanma
-
--   Backend API'si `https://localhost:7277` adresinde çalışır durumda olacaktır.
--   Frontend uygulamasına `http://localhost:5173` adresinden erişebilirsiniz. Frontend, API isteklerini bu adrese yapacak şekilde yapılandırılmıştır (gerekirse `src/Frontend/client-app/src/services` altındaki servis dosyalarını kontrol edin).
-
-## 4. Ortam Değişkenleri ve Güvenlik
-
-Bu depo PUBLIC olduğu için gizli anahtarları (Supabase keys, bağlantı dizeleri vb.) asla repoya koymayın. Aşağıdaki değerleri sadece ortam değişkenleriyle sağlayın:
-
-Backend
-- `ConnectionStrings__DefaultConnection`
-- `Supabase__Url`
-- `Supabase__ServiceRoleKey`
-- `Supabase__AnonKey`
-- `Jwt__Authority` (ör. https://<PROJE-REF>.supabase.co/auth/v1)
-- `Jwt__Audience` (genelde `authenticated`)
-
-Frontend (.env – gitignored)
+Frontend (`src/Frontend/client-app/.env`, gitignored)
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
-- `VITE_API_BASE_URL`
+- `VITE_API_BASE_URL` – backend API base
 
-Örnek dosyalar:
-- Backend: `appsettings.Development.json.example` dosyasını çoğaltıp yerelde doldurun.
-- Frontend: `src/Frontend/client-app/.env` oluşturun (git tarafından izlenmez).
+## Supabase Setup (Quick)
+1) Create project → copy Project URL, Anon key, Service Role key
+2) Postgres: use Session Pooler connection string for the API
+3) Auth: Email provider enabled (default)
+4) (Optional) Deploy Edge Function `invite-user` in `supabase/functions/`
+
+## Deployment
+
+### Backend on Render
+- Environment: .NET 9
+- Build Command:
+```bash
+dotnet publish src/Backend/API.Web/API.Web.csproj -c Release -o out
+```
+- Start Command:
+```bash
+dotnet out/API.Web.dll
+```
+- Environment Variables (Render Dashboard):
+  - All Backend variables listed above
+
+### Frontend on Vercel
+- Framework preset: Vite
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Environment Variables:
+  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_BASE_URL`
+
+### Database/Auth (Supabase)
+- Nothing to build. Ensure RLS/Policies are as required (this project authorizes in API).
+
+## Security Checklist
+- Do NOT commit secrets. Use env vars.
+- Swagger, request-claim logging, Hangfire dashboard are enabled only in Development.
+- CORS only allows your frontend origins.
+- JWT validation uses JWKS or legacy secret; admin operations use Service Role key via backend only.
+
+## Troubleshooting
+- Migrations: ensure Postgres connection string (host, port, db, user, password, SSL Mode) is correct.
+- 401s: verify frontend sends Supabase access token; check API `Jwt:Authority/Audience`.
+- CORS: add your deployed frontend origin to CORS in `Program.cs`.
 
