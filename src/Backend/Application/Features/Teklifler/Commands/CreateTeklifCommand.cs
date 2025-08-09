@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using FluentValidation;
 
 namespace Application.Features.Teklifler.Commands
 {
@@ -54,7 +55,11 @@ namespace Application.Features.Teklifler.Commands
 
         public async Task<TeklifDto> Handle(CreateTeklifCommand request, CancellationToken cancellationToken)
         {
-            // 1. Yeni Teklif ana nesnesini oluştur
+            // 1. En az bir satır olmalı
+            if (request.TeklifSatirlari == null || request.TeklifSatirlari.Count == 0)
+                throw new ValidationException("Teklif satırları boş olamaz.");
+
+            // 2. Yeni Teklif ana nesnesini oluştur (para birimi UI'dan gelir)
             var yeniTeklif = new Teklif
             {
                 Id = Guid.NewGuid(),
@@ -69,7 +74,7 @@ namespace Application.Features.Teklifler.Commands
 
             decimal toplamTutar = 0;
 
-            // 2. Gelen DTO'lardan TeklifSatiri entity'lerini oluştur ve stokları rezerve et
+            // 3. Gelen DTO'lardan TeklifSatiri entity'lerini oluştur ve stokları rezerve et
             foreach (var satirDto in request.TeklifSatirlari)
             {
                 var product = await _unitOfWork.ProductRepository.GetByIdAsync(satirDto.UrunId);
@@ -99,11 +104,11 @@ namespace Application.Features.Teklifler.Commands
 
             yeniTeklif.ToplamTutar = toplamTutar;
 
-            // 3. Unit of Work aracılığıyla veritabanına ekle
+            // 4. Unit of Work aracılığıyla veritabanına ekle
             _unitOfWork.TeklifRepository.Add(yeniTeklif);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // 4. Sonucu DTO olarak döndür
+            // 5. Sonucu DTO olarak döndür
             // Kayıt sonrası veriyi tekrar okuyarak ilişkili alanların (Müşteri Adı vb.) DTO'ya dolmasını sağlıyoruz.
             var olusturulanTeklif = await _unitOfWork.TeklifRepository.GetByIdAsync(yeniTeklif.Id);
             return _mapper.Map<TeklifDto>(olusturulanTeklif);

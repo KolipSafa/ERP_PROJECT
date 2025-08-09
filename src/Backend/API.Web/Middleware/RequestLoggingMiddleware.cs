@@ -27,16 +27,16 @@ namespace API.Web.Middleware
                 var claims = user.Claims.Select(c => $"{c.Type}: {c.Value}").ToList();
                 if (claims.Any())
                 {
-                    _logger.LogWarning("[SPY MIDDLEWARE] Authenticated User Claims: {Claims}", string.Join(", ", claims));
+                    _logger.LogDebug("Authenticated User Claims: {Claims}", string.Join(", ", claims));
                 }
                 else
                 {
-                    _logger.LogWarning("[SPY MIDDLEWARE] Authenticated user has NO claims.");
+                    _logger.LogDebug("Authenticated user has NO claims.");
                 }
             }
             else
             {
-                _logger.LogWarning("[SPY MIDDLEWARE] User is NOT authenticated at this point.");
+                _logger.LogDebug("User is NOT authenticated at this point.");
             }
 
             await _next(context);

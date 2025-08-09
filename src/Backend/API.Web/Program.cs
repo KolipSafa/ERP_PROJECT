@@ -33,9 +33,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "_myAllowSpecificOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy.WithOrigins(
+                "http://localhost:5173",
+                "https://localhost:5173"
+            )
+            .AllowCredentials()
+            .WithHeaders("authorization", "content-type")
+            .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE");
     });
 });
 
@@ -143,8 +147,8 @@ builder.Services.AddAuthentication(options =>
 {
     // Varsayılan kimlik doğrulama şemasını SupabaseRemote yapıyoruz.
     // Böylece [Authorize] çağrılarında JWKS başarısız olsa bile /auth/v1/user doğrulaması devreye girer.
-    options.DefaultAuthenticateScheme = "SupabaseRemote";
-    options.DefaultChallengeScheme = "SupabaseRemote";
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
@@ -187,9 +191,9 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         }
     };
-})
-// Fallback: Supabase /user ile uzaktan doğrulama yapan custom auth scheme
-.AddScheme<AuthenticationSchemeOptions, SupabaseRemoteAuthenticationHandler>("SupabaseRemote", _ => { });
+});
+
+// Fallback yolu: JWT başarısız olursa middleware Supabase /auth/v1/user ile doğrulayıp context.User set eder.
 
 builder.Services.AddHttpClient<ISupabaseAuthAdminService, SupabaseAuthAdminService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -214,6 +218,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    // Prod ortamında Swagger'ı kapat (güvenlik)
+}
 
 app.UseSerilogRequestLogging();
 app.UseMiddleware<ErrorHandlingMiddleware>();
@@ -222,8 +230,11 @@ app.UseCors("_myAllowSpecificOrigins");
 app.UseAuthentication();
 // Fallback: JWT doğrulama başarısız olsa bile Supabase /auth/v1/user ile kimliği üret
 app.UseMiddleware<SupabaseRemoteAuthMiddleware>();
-// Tanı için: kimlik ve claim'leri logla
-app.UseMiddleware<RequestLoggingMiddleware>();
+// Tanı için: kimlik ve claim'leri logla (yalnızca Development)
+if (app.Environment.IsDevelopment())
+{
+    app.UseMiddleware<RequestLoggingMiddleware>();
+}
 app.UseAuthorization();
 
 app.MapControllers();
@@ -232,14 +243,17 @@ if (!app.Environment.IsEnvironment("Test"))
 {
     if (hangfireEnabled)
     {
-        try
+        if (app.Environment.IsDevelopment())
         {
-            app.MapHangfireDashboard();
-        }
-        catch (Exception ex)
-        {
-            var errorLogger = app.Services.GetRequiredService<ILogger<Program>>();
-            errorLogger.LogError(ex, "Hangfire dashboard başlatılamadı. Geliştirme için skip ediliyor.");
+            try
+            {
+                app.MapHangfireDashboard();
+            }
+            catch (Exception ex)
+            {
+                var errorLogger = app.Services.GetRequiredService<ILogger<Program>>();
+                errorLogger.LogError(ex, "Hangfire dashboard başlatılamadı. Geliştirme için skip ediliyor.");
+            }
         }
     }
 

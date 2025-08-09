@@ -12,6 +12,7 @@ namespace API.Web.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
     public class SettingsController : ControllerBase
     {
         private readonly IMediator _mediator;

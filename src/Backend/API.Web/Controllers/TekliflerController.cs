@@ -12,6 +12,7 @@ namespace API.Web.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin,Customer")]
     public class TekliflerController : ControllerBase
     {
         private readonly IMediator _mediator;

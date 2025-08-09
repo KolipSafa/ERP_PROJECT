@@ -113,10 +113,6 @@ onMounted(async () => {
         m.set(pid, (m.get(pid) || 0) + q);
       });
       originalProductQtyMap.value = m;
-    } else {
-      if (currencies.value.length > 0) {
-        teklif.value.currencyId = currencies.value.find(c => c.code === 'TRY')?.id ?? currencies.value[0].id;
-      }
     }
   } catch (error) {
     notifier.error('Veriler yüklenirken bir hata oluştu.');
@@ -142,14 +138,19 @@ watch(productSearch, debounce(async (val: string) => {
 const satirHeaders: any[] = [
   { title: 'Ürün Adı', key: 'urunAdi', width: '30%' },
   { title: 'Açıklama', key: 'aciklama', width: '30%' },
-  { title: 'Miktar', key: 'miktar', width: '10%' },
-  { title: 'Birim Fiyat', key: 'birimFiyat', width: '15%' },
-  { title: 'Toplam', key: 'toplam', width: '15%', align: 'end' },
+  { title: 'Miktar', key: 'miktar', width: 120, align: 'center' },
+  { title: 'Birim Fiyat', key: 'birimFiyat', width: 180 },
+  { title: 'Toplam', key: 'toplam', width: 160, align: 'end' },
   { title: 'Eylemler', key: 'actions', sortable: false, align: 'center' },
 ];
 
 function addProductToQuote() {
   if (!selectedProduct.value) return;
+  // Para birimi: İlk üründe teklife otomatik set et; farklı para birimini engelle
+  // Teklif para birimini ürün para birimine otomatik eşitle (kullanıcı isterse üstten değiştirir)
+  if (!teklif.value.currencyId || teklif.value.currencyId !== (selectedProduct.value.currencyId as unknown as number)) {
+    teklif.value.currencyId = selectedProduct.value.currencyId as unknown as number;
+  }
 
   const yeniSatir: TeklifSatiriDto = {
     id: `new_${Date.now()}`,
@@ -209,6 +210,14 @@ function getAvailableForProduct(productId: number) {
 const selectedCurrencyCode = computed(() => {
   const currency = currencies.value.find(c => c.id === teklif.value.currencyId);
   return currency ? currency.code : 'TRY';
+});
+
+// Ürün seçimi değiştiğinde, seçili para birimini UI’da anında güncelle
+watch(selectedProduct, (p) => {
+  if (!p) return;
+  if (!teklif.value.currencyId) {
+    teklif.value.currencyId = p.currencyId as unknown as number;
+  }
 });
 
 
@@ -421,19 +430,24 @@ async function resendQuote() {
               <v-text-field v-model="item.aciklama" dense hide-details></v-text-field>
             </template>
             <template v-slot:item.miktar="{ item }">
-              <v-text-field
-                v-model.number="item.miktar"
-                type="number"
-                min="1"
-                :color="getAvailableForProduct(item.urunId) < 0 ? 'error' : 'success'"
-                :error="getAvailableForProduct(item.urunId) < 0"
-                :messages="[`Kalan: ${getAvailableForProduct(item.urunId)}`]"
-                density="comfortable"
-                hide-details="auto"
-              ></v-text-field>
+              <div class="qty-cell">
+                <v-text-field
+                  v-model.number="item.miktar"
+                  type="number"
+                  min="1"
+                  :color="getAvailableForProduct(item.urunId) < 0 ? 'error' : 'success'"
+                  :error="getAvailableForProduct(item.urunId) < 0"
+                  :messages="[`Kalan: ${getAvailableForProduct(item.urunId)}`]"
+                  density="compact"
+                  hide-details="auto"
+                  class="qty-input"
+                ></v-text-field>
+              </div>
             </template>
             <template v-slot:item.birimFiyat="{ item }">
-              <v-text-field v-model.number="item.birimFiyat" type="number" min="0" dense hide-details :prefix="selectedCurrencyCode"></v-text-field>
+              <div class="price-cell">
+                <v-text-field v-model.number="item.birimFiyat" type="number" min="0" density="compact" hide-details :prefix="selectedCurrencyCode" class="price-input"></v-text-field>
+              </div>
             </template>
             <template v-slot:item.toplam="{ item }">
               <span>{{ formatCurrency(item.toplam, selectedCurrencyCode) }}</span>
@@ -465,3 +479,20 @@ async function resendQuote() {
     </v-card>
   </v-container>
 </template>
+
+<style scoped>
+.qty-cell, .price-cell {
+  display: flex;
+  align-items: center;
+  height: 56px; /* v-data-table default row height */
+}
+.qty-input, .price-input {
+  max-width: 120px;
+}
+.price-input {
+  max-width: 160px;
+}
+.v-data-table .v-data-table__td {
+  vertical-align: middle;
+}
+</style>

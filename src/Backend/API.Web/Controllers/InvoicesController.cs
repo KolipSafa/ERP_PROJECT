@@ -15,6 +15,7 @@ namespace API.Web.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin,Customer")]
     public class InvoicesController : ControllerBase
     {
         private readonly IMediator _mediator;

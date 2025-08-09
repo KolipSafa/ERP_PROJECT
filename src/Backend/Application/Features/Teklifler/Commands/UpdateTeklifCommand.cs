@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using FluentValidation;
 
 namespace Application.Features.Teklifler.Commands
 {
@@ -71,6 +72,7 @@ namespace Application.Features.Teklifler.Commands
             teklifToUpdate.MusteriId = request.MusteriId ?? teklifToUpdate.MusteriId;
             teklifToUpdate.TeklifTarihi = request.TeklifTarihi ?? teklifToUpdate.TeklifTarihi;
             teklifToUpdate.GecerlilikTarihi = request.GecerlilikTarihi ?? teklifToUpdate.GecerlilikTarihi;
+            // Para birimi: UI'dan gelen currencyId'yi esas al (kullanıcı değiştirebilsin)
             teklifToUpdate.CurrencyId = request.CurrencyId ?? teklifToUpdate.CurrencyId;
             teklifToUpdate.Durum = request.Durum ?? teklifToUpdate.Durum;
             teklifToUpdate.IsActive = request.IsActive ?? teklifToUpdate.IsActive;

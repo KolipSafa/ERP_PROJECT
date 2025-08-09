@@ -79,3 +79,24 @@ Projeyi çalıştırmadan önce sisteminizde aşağıdaki araçların kurulu old
 -   Backend API'si `https://localhost:7277` adresinde çalışır durumda olacaktır.
 -   Frontend uygulamasına `http://localhost:5173` adresinden erişebilirsiniz. Frontend, API isteklerini bu adrese yapacak şekilde yapılandırılmıştır (gerekirse `src/Frontend/client-app/src/services` altındaki servis dosyalarını kontrol edin).
 
+## 4. Ortam Değişkenleri ve Güvenlik
+
+Bu depo PUBLIC olduğu için gizli anahtarları (Supabase keys, bağlantı dizeleri vb.) asla repoya koymayın. Aşağıdaki değerleri sadece ortam değişkenleriyle sağlayın:
+
+Backend
+- `ConnectionStrings__DefaultConnection`
+- `Supabase__Url`
+- `Supabase__ServiceRoleKey`
+- `Supabase__AnonKey`
+- `Jwt__Authority` (ör. https://<PROJE-REF>.supabase.co/auth/v1)
+- `Jwt__Audience` (genelde `authenticated`)
+
+Frontend (.env – gitignored)
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_API_BASE_URL`
+
+Örnek dosyalar:
+- Backend: `appsettings.Development.json.example` dosyasını çoğaltıp yerelde doldurun.
+- Frontend: `src/Frontend/client-app/.env` oluşturun (git tarafından izlenmez).
+
