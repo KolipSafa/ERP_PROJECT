@@ -61,8 +61,8 @@ const headers = [
 onMounted(async () => {
   loading.value = true;
   try {
-    // Backend'in customerId'ye göre filtrelemeyi desteklediğini varsayıyoruz.
-    const response = await InvoiceService.getAll({ customerId: authStore.user?.id });
+    // Customer için params gerekmez; backend kendi faturalarını döndürür.
+    const response = await InvoiceService.getAll();
     invoices.value = response.data;
   } catch (error) {
     console.error("Faturalar alınamadı:", error);
@@ -96,8 +96,20 @@ const viewInvoice = (id: string) => {
   alert(`Fatura ${id} görüntülenecek.`);
 };
 
-const downloadInvoice = (id: string) => {
-  // TODO: Fatura indirme API'sini çağır.
-  alert(`Fatura ${id} indirilecek.`);
+const downloadInvoice = async (id: string) => {
+  try {
+    const res = await InvoiceService.downloadPdf(id);
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoice-${id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error('PDF indirilemedi', e);
+  }
 };
 </script>

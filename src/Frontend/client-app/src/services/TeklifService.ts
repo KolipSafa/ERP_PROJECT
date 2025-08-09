@@ -23,6 +23,16 @@ export interface TeklifFilterParams {
 }
 
 /**
+ * Müşterinin revizyon talebi için göndereceği veri yapısı.
+ * Backend'deki TeklifChangeRequestDto ile eşleşir.
+ */
+export interface RequestChangePayload {
+  notes: string;
+  // Gelecekte satır bazlı değişiklikler de eklenebilir.
+  // updatedLines?: { id: string; newQuantity: number }[];
+}
+
+/**
  * Teklifler ve teklif satırları ile ilgili tüm API iletişimini yöneten servis.
  */
 class TeklifService {
@@ -98,7 +108,7 @@ class TeklifService {
    * @param id Değişiklik talep edilen teklifin ID'si
    * @param payload Değişiklik taleplerini içeren notlar ve satır bilgileri
    */
-  requestChange(id: string, payload: any) { // TODO: payload için DTO tipi oluşturulmalı
+  requestChange(id: string, payload: RequestChangePayload) {
     return apiClient.post(`${API_URL}/${id}/request-change`, payload);
   }
 }

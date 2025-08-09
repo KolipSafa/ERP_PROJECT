@@ -26,6 +26,13 @@ namespace Application.Mappings
                     dest => dest.Durum, 
                     opt => opt.MapFrom(src => src.Durum.ToString())
                 );
+
+            CreateMap<Invoice, InvoiceDto>()
+                .ForMember(d => d.Status, opt => opt.MapFrom(s => (int)s.Status));
+
+            // Invoice -> InvoiceDto
+            CreateMap<Invoice, InvoiceDto>()
+                .ForMember(d => d.Status, opt => opt.MapFrom(s => (int)s.Status));
         }
     }
 }

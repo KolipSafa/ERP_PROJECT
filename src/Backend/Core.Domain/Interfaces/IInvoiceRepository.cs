@@ -9,6 +9,7 @@ namespace Core.Domain.Interfaces
     {
         Task<Invoice?> GetByIdAsync(Guid id);
         Task<IEnumerable<Invoice>> GetAllByCustomerIdAsync(Guid customerId);
+        Task<IEnumerable<Invoice>> GetAllAsync();
         void Add(Invoice invoice);
     }
 }

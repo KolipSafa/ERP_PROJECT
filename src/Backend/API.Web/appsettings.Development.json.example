@@ -7,5 +7,9 @@
   },
   "ConnectionStrings": {
     "DefaultConnection": "Server=YOUR_SERVER_NAME;Database=ERP_DB;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "Jwt": {
+    "Authority": "https://<YOUR-PROJECT-REF>.supabase.co/auth/v1",
+    "Audience": "authenticated"
   }
 }

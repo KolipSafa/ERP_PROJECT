@@ -39,5 +39,14 @@ namespace Infrastructure.Persistence.Repositories
         {
             _context.Invoices.Add(invoice);
         }
+
+        public async Task<IEnumerable<Invoice>> GetAllAsync()
+        {
+            return await _context.Invoices
+                .Include(i => i.InvoiceLines)
+                .Include(i => i.Customer)
+                .OrderByDescending(i => i.InvoiceDate)
+                .ToListAsync();
+        }
     }
 }

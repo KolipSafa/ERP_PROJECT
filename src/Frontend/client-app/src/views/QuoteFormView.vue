@@ -43,6 +43,8 @@ const currencies = ref<CurrencyDto[]>([]);
 const customerSearch = ref('');
 const productSearch = ref('');
 const selectedProduct = ref<ProductDto | null>(null);
+// Düzenleme modunda, orijinal teklif satır miktarlarını ürün bazında tutar (çifte düşümü önlemek için)
+const originalProductQtyMap = ref<Map<number, number>>(new Map());
 
 const statusStringMap: { [key: string]: number } = {
   'Hazırlanıyor': 0,
@@ -100,6 +102,15 @@ onMounted(async () => {
         ...response.data,
         durum: statusValue,
       };
+
+      // Orijinal satır miktarlarını ürün bazında haritalandır
+      const m = new Map<number, number>();
+      (teklif.value.teklifSatirlari || []).forEach(s => {
+        const pid = s.urunId as unknown as number;
+        const q = Number(s.miktar) || 0;
+        m.set(pid, (m.get(pid) || 0) + q);
+      });
+      originalProductQtyMap.value = m;
     } else {
       if (currencies.value.length > 0) {
         teklif.value.currencyId = currencies.value.find(c => c.code === 'TRY')?.id ?? currencies.value[0].id;
@@ -164,6 +175,34 @@ const toplamTutar = computed(() => {
     return acc + toplam;
   }, 0) || 0;
 });
+// Kullanılabilir stok hesaplama (ürün bazında, teklifteki geçici miktarlarla birlikte)
+const productAvailabilityMap = computed(() => {
+  const map = new Map<number, number>();
+  // 1) Başlangıç: backend available = stock - reserved (reserved mevcut teklifin orijinal satırlarını da içerir)
+  products.value.forEach(p => map.set(p.id as number, (p as any).availableQuantity ?? (p.stockQuantity - p.reservedQuantity)));
+
+  // 2) Düzenleme modunda, orijinal satırları nötrle: available'ı orijinal miktar kadar artır
+  originalProductQtyMap.value.forEach((origQty, pid) => {
+    map.set(pid, (map.get(pid) || 0) + (Number(origQty) || 0));
+  });
+
+  // 3) Mevcut formdaki toplamları ürün bazında topla ve onlardan düş
+  const currentTotals = new Map<number, number>();
+  (teklif.value.teklifSatirlari || []).forEach(s => {
+    const pid = s.urunId as unknown as number;
+    currentTotals.set(pid, (currentTotals.get(pid) || 0) + (Number(s.miktar) || 0));
+  });
+  currentTotals.forEach((qty, pid) => {
+    map.set(pid, (map.get(pid) || 0) - qty);
+  });
+
+  return map;
+});
+
+function getAvailableForProduct(productId: number) {
+  return productAvailabilityMap.value.get(productId) ?? 0;
+}
+
 
 const selectedCurrencyCode = computed(() => {
   const currency = currencies.value.find(c => c.id === teklif.value.currencyId);
@@ -335,8 +374,10 @@ async function handleUpdate() {
               </v-autocomplete>
             </v-col>
             <v-col cols="12" md="2">
-              <v-chip v-if="selectedProduct" :color="selectedProduct.availableQuantity > 0 ? 'green' : 'red'" variant="tonal">
-                Kullanılabilir: {{ selectedProduct.availableQuantity }}
+              <v-chip v-if="selectedProduct"
+                     :color="getAvailableForProduct(selectedProduct.id) < 0 ? 'red' : 'green'"
+                     variant="tonal">
+                Kalan: {{ getAvailableForProduct(selectedProduct.id) }}
               </v-chip>
             </v-col>
             <v-col cols="12" md="2">
@@ -357,7 +398,16 @@ async function handleUpdate() {
               <v-text-field v-model="item.aciklama" dense hide-details></v-text-field>
             </template>
             <template v-slot:item.miktar="{ item }">
-              <v-text-field v-model.number="item.miktar" type="number" min="1" dense hide-details></v-text-field>
+              <v-text-field
+                v-model.number="item.miktar"
+                type="number"
+                min="1"
+                :color="getAvailableForProduct(item.urunId) < 0 ? 'error' : 'success'"
+                :error="getAvailableForProduct(item.urunId) < 0"
+                :messages="[`Kalan: ${getAvailableForProduct(item.urunId)}`]"
+                density="comfortable"
+                hide-details="auto"
+              ></v-text-field>
             </template>
             <template v-slot:item.birimFiyat="{ item }">
               <v-text-field v-model.number="item.birimFiyat" type="number" min="0" dense hide-details :prefix="selectedCurrencyCode"></v-text-field>

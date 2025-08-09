@@ -108,7 +108,7 @@ const router = createRouter({
       path: '/my-quotes',
       name: 'my-quotes',
       component: () => import('../views/customer/MyQuotesView.vue'),
-      meta: {  roles: ['Customer'] }
+      meta: { requiresAuth: true, roles: ['Customer'] }
     },
     {
       path: '/my-invoices',

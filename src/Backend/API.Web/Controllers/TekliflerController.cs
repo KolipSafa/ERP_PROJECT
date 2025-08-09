@@ -24,7 +24,10 @@ namespace API.Web.Controllers
         {
             get
             {
-                var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                // sub yoksa NameIdentifier veya user_id claim'lerini de dene
+                var userIdClaim = User.FindFirstValue("sub")
+                                   ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+                                   ?? User.FindFirstValue("user_id");
                 if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
                 {
                     throw new UnauthorizedAccessException("User ID could not be found in the token.");
@@ -104,6 +107,7 @@ namespace API.Web.Controllers
         // --- Müşteri Aksiyonları ---
 
         [HttpPost("{id}/approve")]
+        [Authorize]
         public async Task<IActionResult> Approve(Guid id)
         {
             var command = new ApproveTeklifCommand(id, CurrentUserId);
@@ -112,6 +116,7 @@ namespace API.Web.Controllers
         }
 
         [HttpPost("{id}/reject")]
+        [Authorize]
         public async Task<IActionResult> Reject(Guid id)
         {
             var command = new RejectTeklifCommand(id, CurrentUserId);
@@ -120,6 +125,7 @@ namespace API.Web.Controllers
         }
 
         [HttpPost("{id}/request-change")]
+        [Authorize]
         public async Task<IActionResult> RequestChange(Guid id, [FromBody] TeklifChangeRequestDto changeRequest)
         {
             var command = new RequestTeklifChangeCommand(id, CurrentUserId, changeRequest);

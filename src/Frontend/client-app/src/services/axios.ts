@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
+import { supabase } from '@/lib/supabaseClient';
 
 // Axios için varsayılan bir instance oluştur
 const apiClient = axios.create({
@@ -10,28 +11,32 @@ const apiClient = axios.create({
 // Bu, her istek gönderilmeden önce araya girer.
 apiClient.interceptors.request.use(
   (config) => {
-    // Pinia store'dan token almak yerine, Supabase'in localStorage'da sakladığı
-    // oturum bilgisini doğrudan okumak daha güvenilirdir.
-    // Bu, state'in henüz yüklenmediği "race condition" durumlarını engeller.
+    // Supabase'in localStorage oturum formatını ve olası varyantlarını kontrol et
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    if (!supabaseUrl) {
-      console.error("Supabase URL (VITE_SUPABASE_URL) is not defined in .env file.");
-      return config;
-    }
-    
-    // URL'den Proje ID'sini çıkar (örn: https://<proje-id>.supabase.co)
-    const projectId = supabaseUrl.split('.')[0].replace('https://', '');
-    const supabaseSessionKey = `sb-${projectId}-auth-token`;
-    const sessionDataString = localStorage.getItem(supabaseSessionKey);
-    
-    if (sessionDataString) {
-      const sessionData = JSON.parse(sessionDataString);
-      const token = sessionData.access_token;
-      if (token) {
-        config.headers['Authorization'] = `Bearer ${token}`;
+    if (supabaseUrl) {
+      const projectId = supabaseUrl.split('.')[0].replace('https://', '');
+      const supabaseSessionKey = `sb-${projectId}-auth-token`;
+      const sessionDataString = localStorage.getItem(supabaseSessionKey);
+      if (sessionDataString) {
+        try {
+          const sessionData = JSON.parse(sessionDataString);
+          const token = sessionData?.currentSession?.access_token
+            || sessionData?.access_token
+            || sessionData?.session?.access_token;
+          if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+            return config;
+          }
+        } catch (_) {
+          // JSON parse hatasını sessizce geç
+        }
       }
     }
-
+    // Son çare: Pinia store'un yazdığı fallback anahtar
+    const fallbackToken = localStorage.getItem('access_token');
+    if (fallbackToken) {
+      config.headers['Authorization'] = `Bearer ${fallbackToken}`;
+    }
     return config;
   },
   (error) => {
@@ -47,14 +52,28 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
-    // Eğer 401 (Unauthorized) hatası alınırsa, bu genellikle token'ın süresinin dolduğu anlamına gelir.
-    // Kullanıcıyı güvenli bir şekilde logout yapıp login sayfasına yönlendiriyoruz.
-    if (error.response && error.response.status === 401) {
-      const authStore = useAuthStore();
-      authStore.logout();
+    const authStore = useAuthStore();
+    const originalRequest = error.config;
+    if (error.response && error.response.status === 401 && !originalRequest.__isRetry) {
+      try {
+        // Token yenilemeyi dene
+        const { data, error: refreshErr } = await supabase.auth.refreshSession();
+        if (refreshErr) throw refreshErr;
+        if (data.session?.access_token) {
+          authStore.setSession(data.session); // Pinia state ve localStorage güncellensin
+          originalRequest.__isRetry = true;
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers['Authorization'] = `Bearer ${data.session.access_token}`;
+          return apiClient(originalRequest);
+        }
+      } catch (_) {
+        // refresh başarısızsa normal akışla devam
+      }
     }
-    
-    // Diğer tüm hataları olduğu gibi geri döndür.
+    // 2. kez 401 veya refresh başarısız ise logout
+    if (error.response && error.response.status === 401) {
+      try { await authStore.logout(); } catch {}
+    }
     return Promise.reject(error);
   }
 );

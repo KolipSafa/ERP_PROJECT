@@ -45,6 +45,10 @@ namespace API.Web.Middleware
                     code = HttpStatusCode.BadRequest;
                     result = JsonSerializer.Serialize(new { errors = validationException.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }) });
                     break;
+                case UnauthorizedAccessException:
+                    code = HttpStatusCode.Unauthorized;
+                    result = JsonSerializer.Serialize(new { error = "Yetkisiz erişim." });
+                    break;
                 default:
                     // En önemli değişiklik: Hatayı konsola logluyoruz!
                     logger.LogError(exception, "Beklenmedik bir hata oluştu.");

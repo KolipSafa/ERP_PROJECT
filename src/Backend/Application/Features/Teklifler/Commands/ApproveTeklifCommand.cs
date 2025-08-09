@@ -30,8 +30,8 @@ namespace Application.Features.Teklifler.Commands
                 throw new NotFoundException(nameof(Teklif), request.TeklifId);
             }
 
-            // Güvenlik Kontrolü: İşlemi yapan kullanıcı, teklifin sahibi mi?
-            if (teklif.MusteriId != request.CurrentUserId)
+            // Güvenlik Kontrolü: İşlemi yapan kullanıcı, teklifin bağlı olduğu müşterinin ApplicationUserId'si mi?
+            if (teklif.Musteri?.ApplicationUserId == null || teklif.Musteri.ApplicationUserId.Value != request.CurrentUserId)
             {
                 // Bu hata, yetkisiz bir kullanıcının başka birinin teklifini onaylamasını engeller.
                 throw new UnauthorizedAccessException("Bu teklif üzerinde işlem yapma yetkiniz yok.");
@@ -45,13 +45,19 @@ namespace Application.Features.Teklifler.Commands
             // 1. Teklifin durumunu güncelle
             teklif.Durum = QuoteStatus.Onaylandı;
 
-            // 2. Rezerve edilen miktarları serbest bırak
+            // 2. Stok düş ve rezerve edilen miktarları serbest bırak
             foreach (var satir in teklif.TeklifSatirlari)
             {
                 var product = await _unitOfWork.ProductRepository.GetByIdAsync(satir.UrunId);
                 if (product != null)
                 {
-                    product.ReservedQuantity -= (int)satir.Miktar;
+                    // Stoktan düş
+                    var miktar = (int)satir.Miktar;
+                    if (miktar > 0)
+                    {
+                        product.StockQuantity = Math.Max(0, product.StockQuantity - miktar);
+                        product.ReservedQuantity = Math.Max(0, product.ReservedQuantity - miktar);
+                    }
                     _unitOfWork.ProductRepository.Update(product);
                 }
             }

@@ -36,6 +36,13 @@ class InvoiceService {
   getById(id: string) {
     return apiClient.get<InvoiceDto>(`${this.API_URL}/${id}`);
   }
+
+  /**
+   * Belirtilen faturayı PDF olarak indir.
+   */
+  downloadPdf(id: string) {
+    return apiClient.get(`${this.API_URL}/${id}/pdf`, { responseType: 'blob' });
+  }
 }
 
 export default new InvoiceService();

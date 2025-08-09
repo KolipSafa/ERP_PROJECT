@@ -19,8 +19,8 @@ public class RejectTeklifCommandHandler(IUnitOfWork unitOfWork) : IRequestHandle
             throw new NotFoundException(nameof(Teklif), request.Id);
         }
 
-        // Güvenlik Kontrolü: İşlemi yapan kullanıcı, teklifin sahibi mi?
-        if (teklif.MusteriId != request.CurrentUserId)
+        // Güvenlik Kontrolü: İşlemi yapan kullanıcı, teklifin bağlı olduğu müşterinin ApplicationUserId'si mi?
+        if (teklif.Musteri?.ApplicationUserId == null || teklif.Musteri.ApplicationUserId.Value != request.CurrentUserId)
         {
             throw new UnauthorizedAccessException("Bu teklif üzerinde işlem yapma yetkiniz yok.");
         }

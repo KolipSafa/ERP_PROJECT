@@ -142,6 +142,8 @@ const headers: any[] = [
   { title: 'SKU', key: 'sku' },
   { title: 'Fiyat', key: 'price' },
   { title: 'Stok', key: 'stockQuantity' },
+  { title: 'Rezerve', key: 'reservedQuantity' },
+  { title: 'Kalan', key: 'available' },
   { title: 'Durum', key: 'isActive' },
   { title: 'Eylemler', key: 'actions', sortable: false, align: 'end' },
 ];
@@ -194,6 +196,11 @@ const headers: any[] = [
           height="65vh"
           show-expand
         >
+          <template v-slot:item.available="{ item }">
+            <v-chip :color="item.availableQuantity < 0 ? 'red' : 'green'" size="small" variant="tonal">
+              {{ item.availableQuantity }}
+            </v-chip>
+          </template>
           <template v-slot:item.isActive="{ item }">
             <v-chip :color="item.isActive ? 'green' : 'red'" size="small">
               {{ item.isActive ? 'Aktif' : 'Pasif' }}

@@ -51,7 +51,15 @@ Proje, iki ana ve birbiriyle paralel ilerleyecek aşamada tamamlanacaktır. Her 
 *   **Sıralama ve Mevcut Durum:**
     1.  **Faz 2: Müşteri Etkileşimi ve Fatura Akışı** `✅ Tamamlandı`
     2.  Faz 1: Gelişmiş Envanter Yönetimi `📝 Planlandı`
-*   **Teknik Not (Önemli):** Bu fazın geliştirilmesi sırasında, .NET API'sindeki `[Authorize(Roles="...")]` attribute'larının beklenmedik `401 Unauthorized` hatalarına yol açtığı ve geliştirmeyi engellediği tespit edilmiştir. Geliştirmeye devam edebilmek için, tüm Controller'lardaki rol tabanlı yetkilendirme etiketleri geçici olarak kaldırılmıştır. Bu, projenin şu anki halinde bir güvenlik açığı oluşturmaktadır. **Kullanıcının kararı doğrultusunda, bu konunun çözümü projedeki diğer tüm fonksiyonel geliştirmeler tamamlandıktan sonra, en son adım olarak ele alınacaktır.**
+*   **Teknik Not (Çözülemeyen Kritik Sorun):** Bu fazın geliştirilmesi sırasında, .NET API'sindeki `[Authorize]` attribute'ü ile korunan endpoint'lerin, geçerli bir JWT token gönderilmesine rağmen `System.UnauthorizedAccessException: User ID could not be found in the token` hatası verdiği tespit edilmiştir. Bu durum, `HttpContext.User` nesnesinin kimlik bilgileriyle (claims) doğru bir şekilde doldurulmadığını göstermektedir.
+    *   **Denenen Başarısız Çözümler:**
+        1.  **Claim Mapping:** `Program.cs` içinde, Supabase'in `sub` claim'ini .NET'in standart `ClaimTypes.NameIdentifier`'ına manuel olarak map etme denendi.
+        2.  **Doğrudan Claim Okuma:** `TekliflerController`'daki `CurrentUserId` özelliği, `NameIdentifier` yerine doğrudan `sub` claim'ini okuyacak şekilde değiştirildi.
+        3.  **`appsettings.json` Yapılandırması:** JWT doğrulaması için gerekli olan `Authority` ve `Audience` bilgileri `appsettings.json` dosyasına eklendi.
+        4.  **Ortam Değişkeni Düzeltmesi:** Ayarların `appsettings.Development.json` tarafından ezildiği düşünülerek, `Jwt` ayarları bu dosyaya taşındı.
+        5.  **Strongly-Typed Yapılandırma:** Ayarların okunmasını garanti altına almak için bir `JwtSettings` sınıfı oluşturuldu ve yapılandırma bu sınıf üzerinden `TokenValidationParameters`'a manuel olarak atandı.
+        6.  **Middleware Sıralaması:** `app.UseAuthentication()` ve `app.UseAuthorization()`'ın `app.MapControllers()`'dan önce doğru sırada olduğu teyit edildi.
+    *   **Mevcut Durum:** Yukarıdaki denemelerin hiçbiri sorunu çözememiştir. Bu, projenin müşteri tarafındaki aksiyonlarının (teklif onayı/reddi) çalışmasını engellemektedir. **Kullanıcının kararı doğrultusunda, bu konunun çözümü projedeki diğer tüm fonksiyonel geliştirmeler tamamlandıktan sonra, en son ve en öncelikli teknik borç olarak ele alınacaktır.** Geliştirmeye devam edebilmek için, `TekliflerController`'daki müşteri aksiyonu endpoint'leri geçici olarak `[AllowAnonymous]` ile işaretlenebilir veya frontend'den bu özellikler geçici olarak kaldırılabilir.
 
 ---
 
