@@ -16,8 +16,8 @@ WORKDIR /app
 # Copy published output
 COPY --from=build /app/out .
 
-# Listen on 8080 for Render
-ENV ASPNETCORE_URLS=http://0.0.0.0:${PORT:-10000}
+# Render ortamında portu `Program.cs` dinamik olarak `PORT` env değişkeninden alır.
+# Lokal kullanım için varsayılan 10000 portunu expose ediyoruz (Render EXPOSE'a bakmaz).
 EXPOSE 10000
 
 ENTRYPOINT ["dotnet", "API.Web.dll"]
