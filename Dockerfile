@@ -2,8 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy solution and project files first to leverage Docker layer caching
-COPY src/Backend/ERP.sln src/Backend/
+# Copy project files first to leverage Docker layer caching
 COPY src/Backend/API.Web/API.Web.csproj src/Backend/API.Web/
 COPY src/Backend/Application/Application.csproj src/Backend/Application/
 COPY src/Backend/Application.Interfaces/Application.Interfaces.csproj src/Backend/Application.Interfaces/
