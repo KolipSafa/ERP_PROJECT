@@ -38,10 +38,21 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "_myAllowSpecificOrigins", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:5173",
-                "https://localhost:5173"
-            )
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrWhiteSpace(origin)) return false;
+                if (origin.StartsWith("http://localhost:5173") || origin.StartsWith("https://localhost:5173")) return true;
+                try
+                {
+                    var host = new Uri(origin).Host.ToLowerInvariant();
+                    return host.EndsWith(".vercel.app");
+                }
+                catch
+                {
+                    return false;
+                }
+            })
             .AllowCredentials()
             .WithHeaders("authorization", "content-type")
             .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE");
