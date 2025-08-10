@@ -249,7 +249,19 @@ else
     // Prod ortamında Swagger'ı kapat (güvenlik)
 }
 
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+{
+    options.GetLevel = (ctx, elapsed, ex) =>
+    {
+        // Kök path ("/") isteklerini minimum seviyeye indir; global minimum Information olduğundan loglanmaz
+        if (ctx.Request.Path == "/") return Serilog.Events.LogEventLevel.Debug;
+
+        if (ex != null || ctx.Response.StatusCode >= 500)
+            return Serilog.Events.LogEventLevel.Error;
+
+        return Serilog.Events.LogEventLevel.Information;
+    };
+});
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseCors("_myAllowSpecificOrigins");
 
