@@ -70,6 +70,7 @@ export interface InviteCustomerPayload {
     first_name: string;
     last_name: string;
     company_id?: string;
+    phone_number?: string;
   }
 }
 

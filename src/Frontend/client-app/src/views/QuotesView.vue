@@ -9,6 +9,13 @@ import debounce from 'lodash.debounce';
 
 const router = useRouter();
 const notifier = useNotifier();
+// Basit header tipi (Vuetify align literal'ları)
+type TableHeader = {
+  title: string;
+  key: string;
+  align?: 'start' | 'center' | 'end';
+  sortable?: boolean;
+};
 const teklifler = ref<TeklifDto[]>([]);
 const expanded = ref<string[]>([]);
 const detailsMap = ref(new Map<string, TeklifDto>());
@@ -16,22 +23,22 @@ const customers = ref<CustomerDto[]>([]);
 const loading = ref(true);
 
 // --- Filtreleme ve Sıralama State ---
-// Backend'deki GetAllTekliflerQuery ile eşleşmesi için PascalCase kullanıyoruz.
+// API kontratı camelCase kullanıyor
 const filters = ref<TeklifFilterParams>({
-  MusteriId: undefined,
-  BaslangicTarihi: undefined,
-  BitisTarihi: undefined,
-  Durum: undefined,
-  IncludeInactive: false,
-  SortBy: 'date',
-  SortOrder: 'desc',
+  musteriId: undefined,
+  baslangicTarihi: undefined,
+  bitisTarihi: undefined,
+  durum: undefined,
+  includeInactive: false,
+  sortBy: 'date',
+  sortOrder: 'desc',
 });
 
 const sortOptions = [
-  { title: 'Tarihe Göre (Yeni)', value: { SortBy: 'date', SortOrder: 'desc' as const } },
-  { title: 'Tarihe Göre (Eski)', value: { SortBy: 'date', SortOrder: 'asc' as const } },
-  { title: 'Tutara Göre (Artan)', value: { SortBy: 'amount', SortOrder: 'asc' as const } },
-  { title: 'Tutara Göre (Azalan)', value: { SortBy: 'amount', SortOrder: 'desc' as const } },
+  { title: 'Tarihe Göre (Yeni)', value: { sortBy: 'date' as const, sortOrder: 'desc' as const } },
+  { title: 'Tarihe Göre (Eski)', value: { sortBy: 'date' as const, sortOrder: 'asc' as const } },
+  { title: 'Tutara Göre (Artan)', value: { sortBy: 'amount' as const, sortOrder: 'asc' as const } },
+  { title: 'Tutara Göre (Azalan)', value: { sortBy: 'amount' as const, sortOrder: 'desc' as const } },
 ];
 const selectedSort = ref(sortOptions[0].value);
 
@@ -100,7 +107,7 @@ const getStatusColor = (statusValue: string | number) => {
   }
 };
 
-const headers: any[] = [
+const headers: TableHeader[] = [
   { title: 'Teklif No', key: 'teklifNumarasi' },
   { title: 'Müşteri', key: 'musteriAdi' },
   { title: 'Tarih', key: 'teklifTarihi' },
@@ -162,8 +169,8 @@ watch(expanded, async (newVal, oldVal) => {
 
 watch(filters, debounce(fetchTeklifler, 400), { deep: true });
 watch(selectedSort, (newSortValue) => {
-  filters.value.SortBy = newSortValue.SortBy;
-  filters.value.SortOrder = newSortValue.SortOrder;
+  filters.value.sortBy = newSortValue.sortBy;
+  filters.value.sortOrder = newSortValue.sortOrder;
 });
 
 const updateStatus = async (teklifToUpdate: TeklifDto, yeniDurumValue: number) => {
@@ -257,22 +264,22 @@ const formatCurrency = (value: number, currencyCode: string = 'TRY') => {
             <v-expansion-panel-text>
               <v-row align="center">
                 <v-col cols="12" md="3">
-                  <v-autocomplete v-model="filters.MusteriId" :items="customers" item-title="fullName" item-value="id" label="Müşteriye Göre Filtrele" density="compact" hide-details clearable></v-autocomplete>
+                  <v-autocomplete v-model="filters.musteriId" :items="customers" item-title="fullName" item-value="id" label="Müşteriye Göre Filtrele" density="compact" hide-details clearable></v-autocomplete>
                 </v-col>
                 <v-col cols="6" md="2">
-                  <v-text-field v-model="filters.BaslangicTarihi" label="Başlangıç Tarihi" type="date" density="compact" hide-details clearable></v-text-field>
+                  <v-text-field v-model="filters.baslangicTarihi" label="Başlangıç Tarihi" type="date" density="compact" hide-details clearable></v-text-field>
                 </v-col>
                 <v-col cols="6" md="2">
-                  <v-text-field v-model="filters.BitisTarihi" label="Bitiş Tarihi" type="date" density="compact" hide-details clearable></v-text-field>
+                  <v-text-field v-model="filters.bitisTarihi" label="Bitiş Tarihi" type="date" density="compact" hide-details clearable></v-text-field>
                 </v-col>
                 <v-col cols="12" md="2">
-                  <v-select v-model="filters.Durum" :items="statusOptions" item-title="title" item-value="value" label="Duruma Göre" density="compact" hide-details clearable></v-select>
+                  <v-select v-model="filters.durum" :items="statusOptions" item-title="title" item-value="value" label="Duruma Göre" density="compact" hide-details clearable></v-select>
                 </v-col>
                 <v-col cols="6" md="2">
                   <v-select v-model="selectedSort" :items="sortOptions" label="Sırala" density="compact" hide-details></v-select>
                 </v-col>
                 <v-col cols="6" md="1">
-                  <v-switch v-model="filters.IncludeInactive" label="Pasifler" color="primary" hide-details></v-switch>
+                  <v-switch v-model="filters.includeInactive" label="Pasifler" color="primary" hide-details></v-switch>
                 </v-col>
               </v-row>
             </v-expansion-panel-text>

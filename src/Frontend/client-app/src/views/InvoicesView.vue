@@ -47,11 +47,18 @@
 import { ref, onMounted } from 'vue';
 import InvoiceService from '@/services/InvoiceService';
 import type { InvoiceDto } from '@/services/InvoiceService';
+// Basit ve uyumlu bir header tipi tanımı (Vuetify align literal'larını karşılar)
+type TableHeader = {
+  title: string;
+  key: string;
+  align?: 'start' | 'center' | 'end';
+  sortable?: boolean;
+};
 
 const invoices = ref<InvoiceDto[]>([]);
 const loading = ref(true);
 
-const headers = [
+const headers: TableHeader[] = [
   { title: 'Fatura No', key: 'invoiceNumber' },
   { title: 'Müşteri', key: 'customerName' },
   { title: 'Şirket', key: 'companyName' },
