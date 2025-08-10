@@ -47,5 +47,8 @@
     "@rollup/wasm-node": "^4.21.0",
     "vitest": "^3.2.4",
     "vue-tsc": "^2.2.10"
+  },
+  "overrides": {
+    "rollup": "npm:@rollup/wasm-node@^4.21.0"
   }
 }
