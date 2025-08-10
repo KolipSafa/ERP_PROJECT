@@ -7,9 +7,6 @@ namespace API.Web.Controllers
     {
         [HttpGet("/")]
         public IActionResult Root() => Ok(new { status = "OK" });
-
-        [HttpHead("/")]
-        public IActionResult RootHead() => Ok();
     }
 }
 
