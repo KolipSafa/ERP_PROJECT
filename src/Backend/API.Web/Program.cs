@@ -232,6 +232,13 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+// Basit yanıt sıkıştırma proxy arkası için faydalı (Render gzip/Brotli zaten yapabilir)
+app.Use(async (ctx, next) =>
+{
+    ctx.Response.Headers["Cache-Control"] = "no-store";
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
