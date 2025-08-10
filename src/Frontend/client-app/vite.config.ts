@@ -1,6 +1,7 @@
 import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
+// Fallback: Rollup wasm build available if native fails (env controlled on Vercel)
 import vue from '@vitejs/plugin-vue'
 // import vueDevTools from 'vite-plugin-vue-devtools'
 
