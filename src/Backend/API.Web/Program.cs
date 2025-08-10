@@ -21,6 +21,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Net.Http.Headers;
 using API.Web.Authentication;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.ResponseCompression;
+using System.Collections.Concurrent;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -55,8 +57,17 @@ builder.Services.AddCors(options =>
             })
             .AllowCredentials()
             .WithHeaders("authorization", "content-type")
-            .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE");
+            .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")
+            .SetPreflightMaxAge(TimeSpan.FromHours(12));
     });
+});
+
+// HTTP yanıt sıkıştırma (Brotli + Gzip)
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -105,7 +116,8 @@ TokenValidationParameters BuildTokenValidationParameters(JwtSettings settings)
         ValidateAudience = true,
         ValidAudience = settings.Audience,
         ValidateLifetime = true,
-        ValidateIssuerSigningKey = true
+        ValidateIssuerSigningKey = true,
+        ClockSkew = TimeSpan.FromMinutes(2)
     };
 
     if (!string.IsNullOrWhiteSpace(settings.SigningKey))
@@ -128,33 +140,53 @@ TokenValidationParameters BuildTokenValidationParameters(JwtSettings settings)
         return parameters;
     }
 
+    // JWKS anahtarlarını bellek içinde önbellekle ve kısa timeout kullan
+    var jwksCache = new ConcurrentDictionary<string, (IReadOnlyCollection<SecurityKey> Keys, DateTimeOffset FetchedAt)>();
+
     parameters.IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
     {
+        var cacheKey = settings.Authority;
+        if (jwksCache.TryGetValue(cacheKey, out var entry))
+        {
+            if (DateTimeOffset.UtcNow - entry.FetchedAt < TimeSpan.FromHours(6) && entry.Keys.Count > 0)
+            {
+                return entry.Keys;
+            }
+        }
+
         var urls = new[]
         {
             $"{settings.Authority}/keys",
             $"{settings.Authority}/jwks",
             $"{settings.Authority}/.well-known/jwks.json"
         };
+
         foreach (var url in urls)
         {
             try
             {
-                using var http = new System.Net.Http.HttpClient();
+                using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(3) };
                 var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, url);
                 if (!string.IsNullOrWhiteSpace(supabaseApiKey))
                 {
                     request.Headers.Add("apikey", supabaseApiKey);
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", supabaseApiKey);
                 }
-                var response = http.Send(request);
+                var response = http.SendAsync(request).GetAwaiter().GetResult();
                 if (!response.IsSuccessStatusCode) continue;
                 var jwksJson = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
                 var jwks = new JsonWebKeySet(jwksJson);
-                var keys = jwks.GetSigningKeys();
-                if (keys?.Count > 0) return keys;
+                var keys = (IReadOnlyCollection<SecurityKey>)jwks.GetSigningKeys();
+                if (keys.Count > 0)
+                {
+                    jwksCache[cacheKey] = (keys, DateTimeOffset.UtcNow);
+                    return keys;
+                }
             }
-            catch { /* try next */ }
+            catch
+            {
+                // sonraki url'i dene
+            }
         }
         return Array.Empty<SecurityKey>();
     };
@@ -232,12 +264,18 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Basit yanıt sıkıştırma proxy arkası için faydalı (Render gzip/Brotli zaten yapabilir)
-app.Use(async (ctx, next) =>
+// Yanıt sıkıştırmayı etkinleştir
+app.UseResponseCompression();
+
+// Geliştirmede agresif cache kapatma; prod'da bırakma
+if (app.Environment.IsDevelopment())
 {
-    ctx.Response.Headers["Cache-Control"] = "no-store";
-    await next();
-});
+    app.Use(async (ctx, next) =>
+    {
+        ctx.Response.Headers["Cache-Control"] = "no-store";
+        await next();
+    });
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -266,8 +304,11 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseCors("_myAllowSpecificOrigins");
 
 app.UseAuthentication();
-// Fallback: JWT doğrulama başarısız olsa bile Supabase /auth/v1/user ile kimliği üret
-app.UseMiddleware<SupabaseRemoteAuthMiddleware>();
+// Fallback remote auth doğrulamasını sadece geliştirmede çalıştır
+if (app.Environment.IsDevelopment())
+{
+    app.UseMiddleware<SupabaseRemoteAuthMiddleware>();
+}
 // Tanı için: kimlik ve claim'leri logla (yalnızca Development)
 if (app.Environment.IsDevelopment())
 {
