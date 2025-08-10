@@ -2,21 +2,12 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy project files first to leverage Docker layer caching
-COPY src/Backend/API.Web/API.Web.csproj src/Backend/API.Web/
-COPY src/Backend/Application/Application.csproj src/Backend/Application/
-COPY src/Backend/Application.Interfaces/Application.Interfaces.csproj src/Backend/Application.Interfaces/
-COPY src/Backend/Core.Domain/Core.Domain.csproj src/Backend/Core.Domain/
-COPY src/Backend/Infrastructure/Infrastructure.csproj src/Backend/Infrastructure/
+# Monorepo: basit ve kararlı; tüm kaynakları kopyala, sonra restore/publish
+COPY . .
 
-# Restore only with project files
-RUN dotnet restore src/Backend/API.Web/API.Web.csproj
-
-# Now copy the rest of the backend sources
-COPY src/Backend/ src/Backend/
-
-# Publish API
-RUN dotnet publish src/Backend/API.Web/API.Web.csproj -c Release -o /app/out --no-restore
+# Restore & Publish
+RUN dotnet restore src/Backend/API.Web/API.Web.csproj \
+    && dotnet publish src/Backend/API.Web/API.Web.csproj -c Release -o /app/out --no-restore
 
 # ---------- Runtime stage ----------
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
