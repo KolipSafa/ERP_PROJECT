@@ -23,6 +23,8 @@ using API.Web.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.Collections.Concurrent;
+using Microsoft.OpenApi.Models;
+using System.Collections.Generic;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -44,7 +46,13 @@ builder.Services.AddCors(options =>
             .SetIsOriginAllowed(origin =>
             {
                 if (string.IsNullOrWhiteSpace(origin)) return false;
+                // Frontend'in adresleri
                 if (origin.StartsWith("http://localhost:5173") || origin.StartsWith("https://localhost:5173")) return true;
+                // Geliştirme ortamında Swagger UI için backend'in kendi adresleri
+                if (builder.Environment.IsDevelopment())
+                {
+                    if (origin.StartsWith("http://localhost:5245") || origin.StartsWith("https://localhost:7277")) return true;
+                }
                 try
                 {
                     var host = new Uri(origin).Host.ToLowerInvariant();
@@ -74,6 +82,34 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "My API", Version = "v1" });
+
+    // JWT Bearer Authentication'ı Swagger'a tanıt
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Lütfen 'Bearer ' ve ardından token'ı girin",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
 });
 
 // Default off in Production; enable explicitly via Hangfire:Enabled=true
@@ -183,13 +219,17 @@ TokenValidationParameters BuildTokenValidationParameters(JwtSettings settings)
                     return keys;
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // sonraki url'i dene
+                Log.Warning(ex, "JWKS endpoint'ine erişirken bir hata oluştu: {Url}", url);
             }
         }
         return Array.Empty<SecurityKey>();
     };
+
+    // Supabase ES256 kullandığı için bu algoritmayı geçerli olarak ekliyoruz.
+    parameters.ValidAlgorithms = new[] { "ES256", SecurityAlgorithms.EcdsaSha256 };
 
     return parameters;
 }
@@ -205,6 +245,7 @@ builder.Services.AddAuthentication(options =>
 {
     options.RequireHttpsMetadata = false;
     options.Authority = jwtSettings.Authority; // Supabase Auth base
+    options.MetadataAddress = $"{jwtSettings.Authority}/.well-known/openid-configuration"; // Adresi doğrudan belirtiyoruz
     options.IncludeErrorDetails = true;
     options.TokenValidationParameters = BuildTokenValidationParameters(jwtSettings);
 
@@ -287,19 +328,18 @@ else
     // Prod ortamında Swagger'ı kapat (güvenlik)
 }
 
+// Serilog'u, isteğin *başında* log atacak şekilde yapılandır.
+// Bu, "pending" kalan istekleri teşhis etmek için kritiktir.
 app.UseSerilogRequestLogging(options =>
 {
-    options.GetLevel = (ctx, elapsed, ex) =>
+    // Sadece isteğin temel bilgilerini logla, response detaylarını bekleme.
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
     {
-        // Kök path ("/") isteklerini minimum seviyeye indir; global minimum Information olduğundan loglanmaz
-        if (ctx.Request.Path == "/") return Serilog.Events.LogEventLevel.Debug;
-
-        if (ex != null || ctx.Response.StatusCode >= 500)
-            return Serilog.Events.LogEventLevel.Error;
-
-        return Serilog.Events.LogEventLevel.Information;
+        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
     };
 });
+
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseCors("_myAllowSpecificOrigins");
 
@@ -317,6 +357,31 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 
 app.MapControllers();
+
+// --- GEÇİCİ TEŞHİS ENDPOINT'İ ---
+// Bu endpoint, backend'in Supabase'in JWKS anahtarlarını çekip çekemediğini test eder.
+// Tarayıcıdan /diag/jwks adresine giderek sonucu görebilirsin.
+app.MapGet("/diag/jwks", async (IConfiguration config) => {
+    var authority = config["Jwt:Authority"];
+    if (string.IsNullOrEmpty(authority))
+    {
+        return Results.Problem("Jwt:Authority ayarı bulunamadı.");
+    }
+
+    var jwksUrl = $"{authority.TrimEnd('/')}/.well-known/jwks.json";
+    
+    try
+    {
+        using var httpClient = new HttpClient();
+        var response = await httpClient.GetStringAsync(jwksUrl);
+        return Results.Content(response, "application/json");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"JWKS endpoint'ine erişilemedi: {jwksUrl}. Hata: {ex.ToString()}");
+    }
+});
+// ------------------------------------
 
 if (!app.Environment.IsEnvironment("Test"))
 {
